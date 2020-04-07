@@ -1,11 +1,21 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 func main() {
+	c := make(chan int)
+	go func() {
+		time.Sleep(time.Second * 30)
+		c <- 2
+	}()
+	select {
+	case <-c:
+		fmt.Println("c")
+	default:
+		fmt.Println("d")
 
-	num := []int{4, 5, 6}
-	for i, v := range num {
-		fmt.Println(i, v)
 	}
 }
