@@ -6,10 +6,13 @@ import (
 	"time"
 )
 
-const N int = 4 // Number of tasks.
+// Global Declarations
 
-type pid_t int // Process IDs.
+// ---------------- Configuration --------------------
 
+const N int = 4 // const int N = 4;          Number of tasks.
+
+type pid_t int // typedef int[0,N-1] pid_t;  Process IDs.
 const (
 	n0 pid_t = iota
 	n1
@@ -17,63 +20,77 @@ const (
 	n3
 )
 
-var T = [N]int{18, 16, 16, 14} // End-periods
-var E = [N]int{0, 2, 2, 4}
-var L = [N]int{0, 2, 2, 4}    // End-periods
-var D = [N]int{17, 14, 12, 6} // Deadlines
-var C = [N]int{6, 2, 4, 5}    // Computation Times
-var P = [N]int{1, 2, 3, 4}    // Priorities
+var T = [N]int{18, 16, 16, 14} // const int T[pid_t] = { 18, 16, 16, 14 }; End-periods
+var E = [N]int{0, 2, 2, 4}     // const int E[pid_t] = {  0,  2,  2,  4 };
+var L = [N]int{0, 2, 2, 4}     // const int L[pid_t] = {  0,  2,  2,  4 }; End-periods
+var D = [N]int{17, 14, 12, 6}  // const int D[pid_t] = { 17, 14, 12,  6 }; Deadlines
+var C = [N]int{6, 2, 4, 5}     // const int C[pid_t] = {  6,  2,  4,  5 }; Computation Times
+var P = [N]int{1, 2, 3, 4}     // const int P[pid_t] = {  1,  2,  3,  4 }; Priorities
 
-const S int = 2 // Number of semaphores.
+// Shared resources - semaphores in fact.
+const S int = 2 // const int S = 2; Number of semaphores.
 
-type sid_t int // Resource IDs.
-
+type sid_t int // typedef int[0,S-1] sid_t; Resource IDs.
 const (
 	s0 sid_t = iota
 	s1
 )
 
-var SP = [S][N]int{ // Resource IDs.
+var SP = [S][N]int{ // const int SP[sid_t][pid_t] =  { {1, 0, 0, 2},  {0, 0, 1, 3}};  Resource IDs.
 	{1, 0, 0, 2},
 	{0, 0, 1, 3},
 }
 
-var SV = [S][N]int{ // For each task:
+var SV = [S][N]int{ // const int SV[sid_t][pid_t] = { {5, 0, 0, 3}, {0, 0, 3, 4}}; For each task:
 	{5, 0, 0, 3},
 	{0, 0, 3, 4},
 }
+
+// -----------------------------------------------------
 
 func main() {
 	var wg sync.WaitGroup
 	var priority sync.Mutex
 	var committed = 0
 
-	done := make(chan interface{})
+	done := make(chan interface{}) //chan	done, ready, run, stop;
 	ready := make(chan interface{})
 	run := make(chan interface{})
 	stop := make(chan interface{})
 
-	var p [N]int       // Dynamic priorities.
-	var queue [N]pid_t // Task queue
-	var len int        // Length of the queue.
+	var p [N]int       // int p[pid_t]; Dynamic priorities.
+	var queue [N]pid_t // pid_t queue[pid_t]; Task queue
+	var len int        // int[0,N] len = 0; Length of the queue.
 
-	var cp [S]int // Ceiling priorities.
+	// Could be const but easier to have it computed.
+	var cp [S]int // int cp[sid_t]; Ceiling priorities.
 
-	var ci [N][2*S + 1][2]int
-	var ns [N]int
-	initialize := func() {
-		p = P
+	// Computation intervals for every task.
+	// At most (take + release)*S + C for every task.
+	// [0] -> bound, [1] -> what to do
+	// todo >0 -> take sema todo-1
+	// todo <0 -> release sema -todo-1
+	// todo ==0 -> end of computation
+	// These 2 variables could be const but it's error-prone
+	// and not nice to write them manually.
+	var ci [N][2*S + 1][2]int //int ci[pid_t][2*S+1][2];
+	var ns [N]int             //int ns[pid_t];
+	initialize := func() {    //void initialize()
+		// Initialize dynamic priorities.
+		p = P //p = P;
+		// Ceiling priorities.
 		for i := 0; i < S; i++ {
-			var max int = 0
+			var max int = 0 //int max = 0;
 			for j := 0; j < N; j++ {
-				if SV[i][j] != 0 {
+				if SV[i][j] != 0 { // Task j is using semaphore i.
 					max = Max(P[j], max)
 				}
 			}
 			cp[i] = max
 		}
 		for i := 0; i < N; i++ {
-			var a int
+			// Fill.
+			var a int // int a,b,elem[2];
 			var b int
 			var elem [2]int
 			ns[i] = 0
@@ -90,6 +107,9 @@ func main() {
 			ci[i][ns[i]][0] = C[i]
 			ci[i][ns[i]][1] = 0
 
+			// C[i] always last, no need for ns[i]++ & we count resources.
+			// Insertion-sort.
+
 			for a = 1; a < ns[i]; a++ {
 
 				elem = ci[i][a]
@@ -101,13 +121,13 @@ func main() {
 			}
 		}
 	}
-	head := func() pid_t {
+	head := func() pid_t { //pid_t head()
 		return queue[0]
 	}
-	isEmpty := func() bool {
+	isEmpty := func() bool { //bool isEmpty()
 		return len == 0
 	}
-	remove := func() {
+	remove := func() { //void remove()
 		var i int
 		for i = 0; i+1 < N; i++ {
 
@@ -116,19 +136,20 @@ func main() {
 		len--
 		queue[len] = 0
 	}
-
+	// Template Task
 	Task := func(id pid_t) {
-		axTime := time.Now()
-		ax := time.Since(axTime)
+		// Task Declarations
+		axTime := time.Now()     //clock ax, t, wcrt;
+		ax := time.Since(axTime) //Cumulative clock ax
 		tTime := time.Now()
-		t := time.Since(tTime)
+		t := time.Since(tTime) //Cumulative clock t
 		//wcrtTime:=time.Now()
 
-		var r int = 0
-		var sema [S]bool
+		var r int = 0    //int r = 0;
+		var sema [S]bool //bool sema[sid_t];
 
-		add := func() {
-			var i int
+		add := func() { //void add()
+			var i int //pid_t i, tmp;
 			var tmp pid_t
 			queue[len] = id
 
@@ -141,17 +162,18 @@ func main() {
 			len++
 		}
 
-		updatePriority := func(s int) {
-			if s > 0 {
+		updatePriority := func(s int) { //void updatePriority(int s)
+			if s > 0 { // Take.
 				s = s - 1
 				sema[s] = true
 				p[id] = Max(cp[s], p[id])
-			} else {
+			} else { // Release
 				var j int
 				var tmp pid_t
 
 				s = -s - 1
 				sema[s] = false
+				// Recompute priority.
 
 				p[id] = P[id]
 				for i := 0; i < S; i++ {
@@ -159,7 +181,7 @@ func main() {
 						p[id] = Max(cp[i], p[id])
 					}
 				}
-
+				// Reorder.
 				for j = 0; j+1 < len && (p[queue[j]] < p[queue[j+1]]); j++ {
 
 					tmp = queue[j]
@@ -270,13 +292,14 @@ func main() {
 			}
 		}
 
-	Error: // Error Location
+	Error: // Error Location // <Alarm>
 		fmt.Println(id, "Task  Error")
 		wg.Done()
 		committed--
 		priority.Unlock()
 	}
 
+	// Template Task
 	Scheduler := func() {
 		committed++ // Committed Location
 		priority.Lock()
@@ -322,13 +345,14 @@ func main() {
 			goto Select
 		}
 	}
-
 	wg.Add(4)
-	go Scheduler()
-	go Task(n0)
-	go Task(n1)
-	go Task(n2)
-	go Task(n3)
+	// System declarations
+
+	go Scheduler() //Scheduler
+	go Task(n0)    //Task(0)
+	go Task(n1)    //Task(1)
+	go Task(n2)    //Task(2)
+	go Task(n3)    //Task(3)
 
 	wg.Wait()
 }
