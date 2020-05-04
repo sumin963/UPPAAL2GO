@@ -22,7 +22,7 @@ const (
 
 var T = [N]int{18, 16, 16, 14} // const int T[pid_t] = { 18, 16, 16, 14 }; End-periods
 var E = [N]int{0, 2, 2, 4}     // const int E[pid_t] = {  0,  2,  2,  4 };
-var L = [N]int{0, 2, 2, 4}     // const int L[pid_t] = {  0,  2,  2,  4 }; End-periods
+var L = [N]int{0, 2, 2, 4}     // const int L[pid_t] = {  0,  2,  2,  4 }; // [ E[i] , L[i] ] Ready interval
 var D = [N]int{17, 14, 12, 6}  // const int D[pid_t] = { 17, 14, 12,  6 }; Deadlines
 var C = [N]int{6, 2, 4, 5}     // const int C[pid_t] = {  6,  2,  4,  5 }; Computation Times
 var P = [N]int{1, 2, 3, 4}     // const int P[pid_t] = {  1,  2,  3,  4 }; Priorities
