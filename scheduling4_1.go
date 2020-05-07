@@ -6,52 +6,53 @@ import (
 	"time"
 )
 
-// Global Declarations
-
-// ---------------- Configuration --------------------
-
-const N int = 4 // const int N = 4;          Number of tasks.
-
-type pid_t int // typedef int[0,N-1] pid_t;  Process IDs.
-const (
-	n0 pid_t = iota
-	n1
-	n2
-	n3
-)
-
-var T = [N]int{18, 16, 16, 14} // const int T[pid_t] = { 18, 16, 16, 14 }; End-periods
-var E = [N]int{0, 2, 2, 4}     // const int E[pid_t] = {  0,  2,  2,  4 };
-var L = [N]int{0, 2, 2, 4}     // const int L[pid_t] = {  0,  2,  2,  4 }; // [ E[i] , L[i] ] Ready interval
-var D = [N]int{17, 14, 12, 6}  // const int D[pid_t] = { 17, 14, 12,  6 }; Deadlines
-var C = [N]int{6, 2, 4, 5}     // const int C[pid_t] = {  6,  2,  4,  5 }; Computation Times
-var P = [N]int{1, 2, 3, 4}     // const int P[pid_t] = {  1,  2,  3,  4 }; Priorities
-
-// Shared resources - semaphores in fact.
-const S int = 2 // const int S = 2; Number of semaphores.
-
-type sid_t int // typedef int[0,S-1] sid_t; Resource IDs.
-const (
-	s0 sid_t = iota
-	s1
-)
-
-var SP = [S][N]int{ // const int SP[sid_t][pid_t] =  { {1, 0, 0, 2},  {0, 0, 1, 3}};  Resource IDs.
-	{1, 0, 0, 2},
-	{0, 0, 1, 3},
-}
-
-var SV = [S][N]int{ // const int SV[sid_t][pid_t] = { {5, 0, 0, 3}, {0, 0, 3, 4}}; For each task:
-	{5, 0, 0, 3},
-	{0, 0, 3, 4},
-}
-
-// -----------------------------------------------------
+var wg sync.WaitGroup
+var priority sync.Mutex
+var committed = 0
 
 func main() {
-	var wg sync.WaitGroup
-	var priority sync.Mutex
-	var committed = 0
+
+	// Global Declarations
+
+	// ---------------- Configuration --------------------
+
+	const N int = 4 // const int N = 4;          Number of tasks.
+
+	type pid_t int // typedef int[0,N-1] pid_t;  Process IDs.
+	const (
+		n0 pid_t = iota
+		n1
+		n2
+		n3
+	)
+
+	var T = [N]int{18, 16, 16, 14} // const int T[pid_t] = { 18, 16, 16, 14 }; End-periods
+	var E = [N]int{0, 2, 2, 4}     // const int E[pid_t] = {  0,  2,  2,  4 };
+	var L = [N]int{0, 2, 2, 4}     // const int L[pid_t] = {  0,  2,  2,  4 }; // [ E[i] , L[i] ] Ready interval
+	var D = [N]int{17, 14, 12, 6}  // const int D[pid_t] = { 17, 14, 12,  6 }; Deadlines
+	var C = [N]int{6, 2, 4, 5}     // const int C[pid_t] = {  6,  2,  4,  5 }; Computation Times
+	var P = [N]int{1, 2, 3, 4}     // const int P[pid_t] = {  1,  2,  3,  4 }; Priorities
+
+	// Shared resources - semaphores in fact.
+	const S int = 2 // const int S = 2; Number of semaphores.
+
+	type sid_t int // typedef int[0,S-1] sid_t; Resource IDs.
+	const (
+		s0 sid_t = iota
+		s1
+	)
+
+	var SP = [S][N]int{ // const int SP[sid_t][pid_t] =  { {1, 0, 0, 2},  {0, 0, 1, 3}};  Resource IDs.
+		{1, 0, 0, 2},
+		{0, 0, 1, 3},
+	}
+
+	var SV = [S][N]int{ // const int SV[sid_t][pid_t] = { {5, 0, 0, 3}, {0, 0, 3, 4}}; For each task:
+		{5, 0, 0, 3},
+		{0, 0, 3, 4},
+	}
+
+	// -----------------------------------------------------
 
 	done := make(chan interface{}) //chan	done, ready, run, stop;
 	ready := make(chan interface{})
@@ -141,9 +142,12 @@ func main() {
 		// Task Declarations
 		axTime := time.Now()     //clock ax, t, wcrt;
 		ax := time.Since(axTime) //Cumulative clock ax
+
 		tTime := time.Now()
 		t := time.Since(tTime) //Cumulative clock t
-		//wcrtTime:=time.Now()
+
+		wcrtTime := time.Now()
+		wcrt := time.Since(wcrtTime) //Cumulative clock wcrt
 
 		var r int = 0    //int r = 0;
 		var sema [S]bool //bool sema[sid_t];
@@ -192,18 +196,24 @@ func main() {
 		}
 
 	Idle: // Idle Location
+		wcrt_2 := time.Since(wcrtTime)
+		fmt.Println(id, "Task  idle")
 		for {
-			fmt.Println(id, "Task  idle")
-			time.Sleep(time.Second * time.Duration(E[id]))
-			//invariant
-
-			ready <- struct{}{} // [Idle --> Ready] | Sync: ready!
-			tTime = time.Now()  // [Idle --> Ready] | Update: t=0
-			//wcrtTime = time.Now()          // [Idle --> Ready] | Update: wcrt=0
-
-			add() // [Idle --> Ready] | Update: add()
-			goto Ready
+			t = time.Since(tTime)
+			switch {
+			case (int(t) / 1000000000) >= E[id]:
+				wcrtTime = wcrtTime.Add(wcrt_2 - wcrt)
+				ready <- struct{}{}   // [Idle --> Ready] | Sync: ready!
+				tTime = time.Now()    // [Idle --> Ready] | Update: t=0
+				wcrtTime = time.Now() // [Idle --> Ready] | Update: wcrt=0
+				add()                 // [Idle --> Ready] | Update: add()
+				goto Ready
+			case (int(t) / 1000000000) > L[id]: //invariant
+				goto Alarm
+			}
+			//time.Sleep(time.Second * time.Duration(E[id]))
 		}
+
 	Ready: // Ready Location
 		fmt.Println(id, "Task  Ready")
 		for {
@@ -247,9 +257,7 @@ func main() {
 				priority.Lock()
 				goto Error
 			case (int(ax) / 1000000000) > ci[id][r][0]: // [Running] | invariant: ax<=ci[id][r][0]
-				committed++ // Committed Location
-				priority.Lock()
-				goto Error
+				goto Alarm
 			default:
 				select {
 				case <-stop: // [Running --> Blocked] | sync: stop?
@@ -275,6 +283,7 @@ func main() {
 			default:
 			}
 		}
+
 	EndPeriod: // EndPeriod Location
 		fmt.Println(id, "Task  EndPeriod")
 		for {
@@ -282,13 +291,12 @@ func main() {
 			switch {
 			case (int(t) / 1000000000) == T[id]: // [EndPeriod --> Idle] | Guard: t==T[id]
 				tTime = time.Now() // [EndPeriod --> Idle] | Update: t=0
-				//wcrt                              // [EndPeriod --> Idle] | Update: wcrt=0
-				//&& wcrt'==0:
+				wcrt_2 := time.Since(wcrtTime)
+				wcrtTime = wcrtTime.Add(wcrt_2 - wcrt)
+				wcrtTime = time.Now() // [EndPeriod --> Idle] | Update: wcrt=0
 				goto Idle
 			case (int(t) / 1000000000) > T[id]: // [EndPeriod --> Idle] | Invariant: t<=T[id]
-				committed++ // Committed Location
-				priority.Lock()
-				goto Error
+				goto Alarm
 			}
 		}
 
@@ -297,6 +305,9 @@ func main() {
 		wg.Done()
 		committed--
 		priority.Unlock()
+
+	Alarm:
+		fmt.Println("Invariant Violation!")
 	}
 
 	// Template Task
@@ -307,6 +318,7 @@ func main() {
 		initialize() // [Init --> Free] | Update: initialize()
 		committed--
 		priority.Unlock()
+		goto Free
 	Free: // Free Location
 		committed++ // Committed Location
 		priority.Lock()
@@ -315,12 +327,17 @@ func main() {
 		case isEmpty() == true: // [Free --> anonymous] | Guard: isEmpty()
 			committed--
 			priority.Unlock()
-			fmt.Println("Scheduler anonymous")
-			<-ready // [anonymous --> Select] | Sync: ready?
+			goto Anonymous
 		case isEmpty() == false:
 			committed--
 			priority.Unlock()
+			goto Select
 		}
+	Anonymous:
+		fmt.Println("Scheduler anonymous")
+		<-ready // [anonymous --> Select] | Sync: ready?
+		goto Select
+
 	Select: // Select Location
 		committed++ // Committed Location
 		priority.Lock()
@@ -336,14 +353,16 @@ func main() {
 			fmt.Println("Scheduler done")
 			goto Free
 		case <-ready: // [Occ --> anonnymous] | Sync: ready?
-			committed++ // Committed Location
-			priority.Lock()
-			fmt.Println("Scheduler ready")
-			stop <- struct{}{} // [anonnymous --> Select] | Sync: stop?
-			committed--
-			priority.Unlock()
-			goto Select
+			goto Committed
 		}
+	Committed: // <Committed Location & Edge>
+		committed++ // Committed Location
+		priority.Lock()
+		fmt.Println("Scheduler ready")
+		stop <- struct{}{} // [anonnymous --> Select] | Sync: stop?
+		committed--
+		priority.Unlock()
+		goto Select
 	}
 	wg.Add(4)
 	// System declarations
