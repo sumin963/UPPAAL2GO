@@ -201,14 +201,15 @@ func main() {
 		for {
 			t = time.Since(tTime)
 			switch {
-			case (int(t) / 1000000000) >= E[id]:
+			case (int(t) / 1000000000) >= E[id]: // [Idle --> Ready] | Guard : t>=E[id]
+				Check()
 				wcrtTime = wcrtTime.Add(wcrt_2 - wcrt)
 				ready <- struct{}{}   // [Idle --> Ready] | Sync: ready!
 				tTime = time.Now()    // [Idle --> Ready] | Update: t=0
 				wcrtTime = time.Now() // [Idle --> Ready] | Update: wcrt=0
 				add()                 // [Idle --> Ready] | Update: add()
 				goto Ready
-			case (int(t) / 1000000000) > L[id]: //invariant
+			case (int(t) / 1000000000) > L[id]: // [Idle --> Ready] | invariant : t<=L[id]
 				goto Alarm
 			}
 			//time.Sleep(time.Second * time.Duration(E[id]))
@@ -224,8 +225,7 @@ func main() {
 				axTime = time.Now() // [Ready --> Running] | Update: ax=0
 				goto Running
 			case (int(t) / 1000000000) > D[id]: // [Ready --> Error] | Guard: t>D[id]
-				committed++ // Committed Location
-				priority.Lock()
+				Check()
 				goto Error
 			default:
 			}
@@ -242,19 +242,20 @@ func main() {
 				case <-stop: // [Running --> Blocked] | sync: stop?
 					goto Blocked
 				case ready <- struct{}{}: // [Running --> Running] | Sync: ready!
+					Check()
 					updatePriority(ci[id][r][1]) // [Running --> Running] | Update: updatePriority()
 					r++                          // [Running --> Running] | Update: r++
 					goto Running
 				default:
 				}
 			case (head() == id && (int(ax)/1000000000) >= C[id]) && r == ns[id]: // [Running --> EndPeriod] | Guard: head() == id && ax>=C[id] && r == ns[id]
+				Check()
 				done <- struct{}{} // [Running --> EndPeriod] | Sync: done!
 				remove()           // [Running --> EndPeriod] | Update: remove()
 				r = 0              // [Running --> EndPeriod] | Update: r=0
 				goto EndPeriod
 			case (int(t) / 1000000000) > D[id]: // [Running --> Error] | Guard: t>D[id]
-				committed++ // Committed Location
-				priority.Lock()
+				Check()
 				goto Error
 			case (int(ax) / 1000000000) > ci[id][r][0]: // [Running] | invariant: ax<=ci[id][r][0]
 				goto Alarm
@@ -277,8 +278,7 @@ func main() {
 				axTime = axTime.Add(ax_2 - ax)
 				goto Running
 			case (int(t) / 1000000000) > D[id]: // [Blocked --> Error] | Guard: t>D[id]
-				committed++ // Committed Location
-				priority.Lock()
+				Check()
 				goto Error
 			default:
 			}
@@ -290,6 +290,7 @@ func main() {
 			t = time.Since(tTime)
 			switch {
 			case (int(t) / 1000000000) == T[id]: // [EndPeriod --> Idle] | Guard: t==T[id]
+				Check()
 				tTime = time.Now() // [EndPeriod --> Idle] | Update: t=0
 				wcrt_2 := time.Since(wcrtTime)
 				wcrtTime = wcrtTime.Add(wcrt_2 - wcrt)
@@ -301,6 +302,8 @@ func main() {
 		}
 
 	Error: // Error Location // <Alarm>
+		committed++ // Committed Location
+		priority.Lock()
 		fmt.Println(id, "Task  Error")
 		wg.Done()
 		committed--
@@ -381,4 +384,12 @@ func Max(x int, y int) int { // operator >?
 		return y
 	}
 	return x
+}
+
+func Check() {
+	for committed > 0 {
+		priority.Lock()
+		priority.Unlock()
+	}
+
 }
