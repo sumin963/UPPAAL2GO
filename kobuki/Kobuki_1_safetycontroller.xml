@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+	<declaration>// Place global declarations here.
+
+const int QWheel_size=12;
+const int QBumper_size=12;
+const int QCliff_size=12;
+
+const int spinRate=1;
+const int TimeOut=1;
+const int CBmin=4, CBmax=5;
+
+
+
+
+typedef int[0,2] sensor_Type;
+typedef int[0,2] sensor_Pos;
+
+typedef int[0,2] subscriber_QID;
+
+
+chan sensorMsg[sensor_Type][sensor_Pos];
+
+broadcast chan spinOnce;
+
+urgent broadcast chan go;
+urgent broadcast chan getMsgs;
+
+int[0,50] CBavail=0;
+
+
+
+</declaration>
+	<template>
+		<name>sensor</name>
+		<parameter>const sensor_Type SensorType, const sensor_Pos SensorPos</parameter>
+		<declaration>clock t;
+
+
+</declaration>
+		<location id="id0" x="-425" y="-42">
+			<name x="-408" y="-59">Init</name>
+		</location>
+		<init ref="id0"/>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id0"/>
+			<label kind="guard" x="-476" y="-178">t&gt;=1</label>
+			<label kind="synchronisation" x="-544" y="-161">sensorMsg[SensorType][SensorPos]!</label>
+			<label kind="assignment" x="-408" y="-178">t=0</label>
+			<nail x="-501" y="-136"/>
+			<nail x="-357" y="-136"/>
+		</transition>
+	</template>
+	<template>
+		<name>subscriberQueue</name>
+		<parameter>const subscriber_QID SubscriberQID, const int SIZE</parameter>
+		<declaration>
+int[0, SIZE] MsgCount=0;
+
+</declaration>
+		<location id="id1" x="-272" y="-8">
+			<name x="-280" y="8">Ok</name>
+			<committed/>
+		</location>
+		<location id="id2" x="264" y="-8">
+			<name x="229" y="8">Overflow</name>
+		</location>
+		<location id="id3" x="0" y="-8">
+			<name x="-8" y="17">Init</name>
+		</location>
+		<init ref="id3"/>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id3"/>
+			<label kind="synchronisation" x="-136" y="42">go!</label>
+			<nail x="-119" y="42"/>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id2"/>
+			<label kind="select" x="263" y="-119">st: sensor_Type, pos: sensor_Pos</label>
+			<label kind="guard" x="263" y="-85">SubscriberQID==st and 
+MsgCount&gt;=SIZE</label>
+			<label kind="synchronisation" x="263" y="-102">sensorMsg[st][pos]?</label>
+			<nail x="323" y="-51"/>
+			<nail x="323" y="34"/>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id3"/>
+			<label kind="synchronisation" x="-25" y="68">getMsgs?</label>
+			<label kind="assignment" x="-34" y="85">MsgCount=0</label>
+			<nail x="-34" y="59"/>
+			<nail x="42" y="59"/>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id3"/>
+			<label kind="synchronisation" x="119" y="42">getMsgs?</label>
+			<label kind="assignment" x="119" y="59">MsgCount=0</label>
+			<nail x="153" y="42"/>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id1"/>
+			<label kind="select" x="-255" y="-85">st: sensor_Type, pos: sensor_Pos</label>
+			<label kind="guard" x="-255" y="-51">SubscriberQID==st and MsgCount&lt;SIZE</label>
+			<label kind="synchronisation" x="-255" y="-68">sensorMsg[st][pos]?</label>
+			<label kind="assignment" x="-255" y="-34">MsgCount++, CBavail++</label>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id2"/>
+			<label kind="select" x="25" y="-85">st: sensor_Type, pos: sensor_Pos</label>
+			<label kind="guard" x="25" y="-51">SubscriberQID==st and 
+MsgCount&gt;=SIZE</label>
+			<label kind="synchronisation" x="25" y="-68">sensorMsg[st][pos]?</label>
+		</transition>
+	</template>
+	<template>
+		<name x="5" y="5">safetyControllerUpdate</name>
+		<declaration>// Place local declarations here.
+ clock t;
+
+
+</declaration>
+		<location id="id4" x="187" y="0">
+			<name x="170" y="-34">spinLoc</name>
+			<committed/>
+		</location>
+		<location id="id5" x="17" y="0">
+			<name x="7" y="-34">Init</name>
+			<label kind="invariant" x="-25" y="17">t&lt;=spinRate</label>
+		</location>
+		<init ref="id5"/>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id5"/>
+			<label kind="assignment" x="102" y="42">t=0</label>
+			<nail x="110" y="42"/>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id4"/>
+			<label kind="guard" x="76" y="-93">t==spinRate</label>
+			<label kind="synchronisation" x="76" y="-76">spinOnce!</label>
+			<nail x="110" y="-51"/>
+		</transition>
+	</template>
+	<template>
+		<name>callBackQueue</name>
+		<declaration>clock t1,t2;
+
+//int[0,CBmax*30] MinCBTime, MaxCBTime;
+
+int[0,10] MinCBTime, MaxCBTime;
+
+void setCBTime(){
+ 
+    MaxCBTime=CBmax;  
+    MinCBTime=CBmin; 
+
+//    MaxCBTime=CBmax*CBAvail;
+//    MinCBTime=CBmin*CBAvail;
+}
+
+</declaration>
+		<location id="id6" x="-102" y="34">
+			<committed/>
+		</location>
+		<location id="id7" x="-102" y="-25">
+			<name x="-110" y="-17">Init</name>
+		</location>
+		<location id="id8" x="-289" y="-25">
+			<name x="-348" y="-59">CBprocess</name>
+			<label kind="invariant" x="-374" y="-8">t1&lt;=MaxCBTime</label>
+		</location>
+		<location id="id9" x="76" y="-25">
+			<name x="59" y="-59">wait</name>
+			<label kind="invariant" x="59" y="-8">t2&lt;=TimeOut</label>
+		</location>
+		<location id="id10" x="-102" y="-136">
+			<committed/>
+		</location>
+		<init ref="id7"/>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id8"/>
+			<label kind="synchronisation" x="-263" y="8">getMsgs!</label>
+			<label kind="assignment" x="-263" y="25">setCBTime(), 
+t1=0, CBavail=0</label>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id6"/>
+			<label kind="guard" x="-34" y="34">CBavail&gt;=1</label>
+			<label kind="synchronisation" x="-34" y="17">go?</label>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id8"/>
+			<label kind="guard" x="-280" y="-144">CBavail&gt;0</label>
+			<label kind="synchronisation" x="-280" y="-161">getMsgs!</label>
+			<label kind="assignment" x="-280" y="-127">setCBTime(), 
+t1=0, CBavail=0</label>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id7"/>
+			<label kind="guard" x="-59" y="-51">t2==TimeOut</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id7"/>
+			<label kind="guard" x="-229" y="-51">t1&gt;=MinCBTime</label>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id10"/>
+			<label kind="synchronisation" x="-127" y="-93">spinOnce?</label>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id9"/>
+			<label kind="guard" x="-51" y="-153">CBavail==0</label>
+			<label kind="assignment" x="-51" y="-136">t2=0</label>
+		</transition>
+	</template>
+	<system>// Place template instantiations here.
+//Process = Template();
+// List one or more processes to be composed into a system.
+
+Wheel_Left=sensor(0,0);
+Wheel_Right=sensor(0,1);
+QWheel=subscriberQueue(0,QWheel_size);
+
+Bumper_Left=sensor(1,0);
+Bumper_Center=sensor(1,1);
+Bumper_Right=sensor(1,2);
+QBumper=subscriberQueue(1,QBumper_size);
+
+Cliff_Left=sensor(2,0);
+Cliff_Center=sensor(2,1);
+Cliff_Right=sensor(2,2);
+QCliff=subscriberQueue(2,QCliff_size);
+
+
+SafetyControllerUpdate=safetyControllerUpdate();
+CBQueue=callBackQueue();
+
+//system 
+system Wheel_Left, Wheel_Right, QWheel, Bumper_Left, Bumper_Center, Bumper_Right, QBumper, Cliff_Left, Cliff_Center, Cliff_Right, QCliff, SafetyControllerUpdate, CBQueue;
+</system>
+	<queries>
+		<query>
+			<formula>E&lt;&gt; QWheel.Overflow
+			</formula>
+			<comment>
+			</comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; QBumper.Overflow
+			</formula>
+			<comment>
+			</comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; QCliff.Overflow
+			</formula>
+			<comment>
+			</comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock
+			</formula>
+			<comment>
+			</comment>
+		</query>
+	</queries>
+</nta>
