@@ -23,15 +23,16 @@ type transition_e_prime struct {
 	guard  string
 }
 type tada_transition struct {
-	source string
-	target string
-	action string
-	update string
+	source  string
+	target  string
+	action  string
+	update  string
+	_select string
 }
 
 func main() {
 	doc := etree.NewDocument()
-	if err := doc.ReadFromFile("train-gate.xml"); err != nil {
+	if err := doc.ReadFromFile("2doors.xml"); err != nil {
 		panic(err)
 	}
 	f := NewFile("main")
@@ -144,11 +145,13 @@ func main() {
 
 				_id := l.Attr[0].Value
 				_guard := ""
-				for num, edge := range Edge_prime {
+				Edge_prime_deduplication := deduplication(clock, Edge_prime, tem_num)
+				for num, edge := range Edge_prime_deduplication {
+					_origin_guard := ""
 					for _, label := range edge.FindElements("label") {
 						if label.Attr[0].Value == "guard" {
-							_guard = label.Text()
-							_guard = transformEdge(_guard)
+							_origin_guard = label.Text()
+							_guard = mapGuard_lessthan(_origin_guard)
 						}
 					}
 					_edge_element := transition_e_prime{_id, _id + "p", _guard}
@@ -156,15 +159,31 @@ func main() {
 					_id = _id + "p"
 					time_flow_loc = append(time_flow_loc, _id)
 
-					if len(Edge_prime)-1 == num && _isinvariant {
-						_inv := ta_loc_info[tem_num][loc_num][1]
-						_inv = transformEdge_inv(_inv)
-						_edge_element := transition_e_prime{_id, "exp", _inv}
-						time_flow_edge = append(time_flow_edge, _edge_element)
-					} else if true { //guard가 at일때 추가
-
+					for _, label := range edge.FindElements("label") {
+						if label.Attr[0].Value == "guard" {
+							_origin_guard = label.Text()
+							_guard = mapGuard_greaterthan(_origin_guard)
+						}
 					}
 
+					_edge_element = transition_e_prime{_id, _id + "p", _guard}
+					time_flow_edge = append(time_flow_edge, _edge_element)
+					_id = _id + "p"
+					time_flow_loc = append(time_flow_loc, _id)
+					fmt.Println(_origin_guard, (len(Edge_prime_deduplication)-1 == num && _isinvariant) && strings.Contains(_origin_guard, "=="))
+					if (len(Edge_prime_deduplication)-1 == num && _isinvariant) && strings.Contains(_origin_guard, "==") {
+						_id = _id[:len(_id)-1]
+						_edge_element = transition_e_prime{_id, "exp", _guard}
+						time_flow_edge = time_flow_edge[:len(time_flow_edge)-1]
+						time_flow_edge = append(time_flow_edge, _edge_element)
+						time_flow_loc = time_flow_loc[:len(time_flow_loc)-1]
+						//fmt.Println(time_flow_loc, _id)
+					} else if len(Edge_prime_deduplication)-1 == num && _isinvariant {
+						_inv := ta_loc_info[tem_num][loc_num][1]
+						_inv = mapGuard_greaterthan(_inv)
+						_edge_element := transition_e_prime{_id, "exp", _inv}
+						time_flow_edge = append(time_flow_edge, _edge_element)
+					}
 				}
 				for _, val := range time_flow_loc {
 					newloc := e.CreateElement("location")
@@ -172,8 +191,9 @@ func main() {
 					newloc.CreateAttr("x", "0")
 					newloc.CreateAttr("y", "0")
 				}
-				for i, val := range time_flow_edge {
+				for _, val := range time_flow_edge {
 					for _, edge := range Edge_prime {
+						_select := ""
 						_action := ""
 						_update := ""
 						_target := ""
@@ -183,21 +203,21 @@ func main() {
 						for _, l := range edge.FindElements("label") {
 
 							if l.Attr[0].Value == "select" {
+								_select = l.Text()
 							} else if l.Attr[0].Value == "synchronisation" {
 								_action = l.Text()
 							} else if l.Attr[0].Value == "assignment" {
 								_update = l.Text()
 							}
 						}
-						if i == 0 && ispossible(val, edge, clock, tem_num, "false") {
-							_edge_element := tada_transition{val.source, _target, _action, _update}
-							tada_flow_edge = append(tada_flow_edge, _edge_element)
-						} else if i != 0 && ispossible(val, edge, clock, tem_num, get_form(time_flow_edge[i-1].guard)) {
-							_edge_element := tada_transition{val.source, _target, _action, _update}
+
+						if ispossible(val, edge, clock, tem_num) {
+							_edge_element := tada_transition{val.source, _target, _action, _update, _select}
 							tada_flow_edge = append(tada_flow_edge, _edge_element)
 						}
 					}
 					for _, edge := range Edge_double_prime {
+						_select := ""
 						_action := ""
 						_update := ""
 						_target := ""
@@ -207,19 +227,21 @@ func main() {
 						for _, l := range edge.FindElements("label") {
 
 							if l.Attr[0].Value == "select" {
+								_select = l.Text()
 							} else if l.Attr[0].Value == "synchronisation" {
 								_action = l.Text()
 							} else if l.Attr[0].Value == "assignment" {
 								_update = l.Text()
 							}
 						}
-						_edge_element := tada_transition{val.source, _target, _action, _update}
+						_edge_element := tada_transition{val.source, _target, _action, _update, _select}
 						tada_flow_edge = append(tada_flow_edge, _edge_element)
 					}
 
 				} //timeflow가 생성이 안될때 더블프라임엣지 생서하는 루프필요
 				if len(time_flow_edge) == 0 {
 					for _, edge := range Edge_double_prime {
+						_select := ""
 						_action := ""
 						_update := ""
 						_target := ""
@@ -233,13 +255,14 @@ func main() {
 						for _, l := range edge.FindElements("label") {
 
 							if l.Attr[0].Value == "select" {
+								_select = l.Text()
 							} else if l.Attr[0].Value == "synchronisation" {
 								_action = l.Text()
 							} else if l.Attr[0].Value == "assignment" {
 								_update = l.Text()
 							}
 						}
-						_edge_element := tada_transition{_source, _target, _action, _update}
+						_edge_element := tada_transition{_source, _target, _action, _update, _select}
 						tada_flow_edge = append(tada_flow_edge, _edge_element)
 					}
 				}
@@ -290,6 +313,13 @@ func main() {
 						_tran_label.CreateAttr("y", "0")
 						_tran_label.CreateText(val.update)
 					}
+					if val._select != "" {
+						_tran_label := _tran.CreateElement("label")
+						_tran_label.CreateAttr("kind", "select")
+						_tran_label.CreateAttr("x", "0")
+						_tran_label.CreateAttr("y", "0")
+						_tran_label.CreateText(val._select)
+					}
 
 				}
 			}
@@ -306,39 +336,31 @@ func main() {
 	new_doc.WriteTo(os.Stdout)
 }
 
-func ispossible(val transition_e_prime, edge *etree.Element, clock [][]string, tem_num int, before string) bool {
+func ispossible(val transition_e_prime, edge *etree.Element, clock [][]string, tem_num int) bool {
 	result := false
 	for _, label := range edge.FindElements("label") {
 		if label.Attr[0].Value == "guard" {
 			_guard := label.Text()
+
 			if strings.Contains(_guard, "<=") {
-				_guard_element := del_black(_guard, "<=")
-				_timeflow_element := del_black(val.guard, "==")
-				if (find_int_element(clock, _guard_element, tem_num) > find_int_element_timeflow(clock, _timeflow_element, tem_num)) || ((find_int_element(clock, _guard_element, tem_num) == find_int_element_timeflow(clock, _timeflow_element, tem_num)) && (get_form(val.guard) == "[x==n]")) {
+				if find_int_element_ispossible(clock, _guard, tem_num) >= find_int_element_ispossible(clock, val.guard, tem_num) {
 					return true
 				}
 			} else if strings.Contains(_guard, "<") {
-				_guard_element := del_black(_guard, "<")
-				_timeflow_element := del_black(val.guard, "==")
-				if (find_int_element(clock, _guard_element, tem_num) > find_int_element_timeflow(clock, _timeflow_element, tem_num)) || ((find_int_element(clock, _guard_element, tem_num) == find_int_element_timeflow(clock, _timeflow_element, tem_num)) && (get_form(val.guard) == "(x==n]")) {
+				if (find_int_element_ispossible(clock, _guard, tem_num) > find_int_element_ispossible(clock, val.guard, tem_num)) || ((find_int_element_ispossible(clock, _guard, tem_num) == find_int_element_ispossible(clock, val.guard, tem_num)) && (get_form(val.guard) == "x<n")) {
 					return true
 				}
 			} else if strings.Contains(_guard, "==") {
-				_guard_element := del_black(_guard, "==")
-				_timeflow_element := del_black(val.guard, "==")
-				if (find_int_element(clock, _guard_element, tem_num) == find_int_element_timeflow(clock, _timeflow_element, tem_num)) && (get_form(val.guard) == "[x==n)") {
+				if (find_int_element_ispossible(clock, _guard, tem_num) == find_int_element_ispossible(clock, val.guard, tem_num)) && (get_form(val.guard) == "x>n") {
 					return true
 				}
 			} else if strings.Contains(_guard, ">=") {
-				_guard_element := del_black(_guard, ">=")
-				_timeflow_element := del_black(val.guard, "==")
-				if (find_int_element(clock, _guard_element, tem_num) < find_int_element_timeflow(clock, _timeflow_element, tem_num)) || ((find_int_element(clock, _guard_element, tem_num) == find_int_element_timeflow(clock, _timeflow_element, tem_num)) && (before == "(x==n]")) {
+
+				if find_int_element_ispossible(clock, _guard, tem_num) < find_int_element_ispossible(clock, val.guard, tem_num) || ((find_int_element_ispossible(clock, _guard, tem_num) == find_int_element_ispossible(clock, val.guard, tem_num)) && (get_form(val.guard) == "x>n")) {
 					return true
 				}
 			} else if strings.Contains(_guard, ">") {
-				_guard_element := del_black(_guard, ">")
-				_timeflow_element := del_black(val.guard, "==")
-				if (find_int_element(clock, _guard_element, tem_num) < find_int_element_timeflow(clock, _timeflow_element, tem_num)) || ((find_int_element(clock, _guard_element, tem_num) == find_int_element_timeflow(clock, _timeflow_element, tem_num)) && (before == "(x==n]")) {
+				if (find_int_element_ispossible(clock, _guard, tem_num) < find_int_element_ispossible(clock, val.guard, tem_num)) || ((find_int_element_ispossible(clock, _guard, tem_num) == find_int_element_ispossible(clock, val.guard, tem_num)) && (get_form(val.guard) == "x>n")) {
 					return true
 				}
 			}
@@ -349,9 +371,14 @@ func ispossible(val transition_e_prime, edge *etree.Element, clock [][]string, t
 
 func get_form(guard string) string {
 	result := ""
-	_start := guard[:1]
-	_end := guard[len(guard)-1:]
-	result = _start + "x==n" + _end
+
+	if strings.Contains(guard, "<") {
+		_guard_element := del_black(guard, "<")
+		result = _guard_element[0] + "<n"
+	} else if strings.Contains(guard, ">") {
+		_guard_element := del_black(guard, ">")
+		result = _guard_element[0] + ">n"
+	}
 	return result
 }
 func transformEdge_inv(guard string) string {
@@ -365,26 +392,49 @@ func transformEdge_inv(guard string) string {
 
 	return guard
 }
-func transformEdge(guard string) string {
+
+func mapGuard_lessthan(guard string) string {
 	if strings.Contains(guard, "<=") {
 		_guard_element := del_black(guard, "<=")
-		guard = "[" + _guard_element[0] + "==" + _guard_element[1] + "]"
+		guard = _guard_element[0] + "<" + _guard_element[1]
 	} else if strings.Contains(guard, "<") {
 		_guard_element := del_black(guard, "<")
-		guard = "(" + _guard_element[0] + "==" + _guard_element[1] + "]"
+		guard = _guard_element[0] + "<" + _guard_element[1]
 	} else if strings.Contains(guard, "==") {
 		_guard_element := del_black(guard, "==")
-		guard = "(" + _guard_element[0] + "==" + _guard_element[1] + "]"
+		guard = _guard_element[0] + "<" + _guard_element[1]
 	} else if strings.Contains(guard, ">=") {
 		_guard_element := del_black(guard, ">=")
-		guard = "[" + _guard_element[0] + "==" + _guard_element[1] + "]"
+		guard = _guard_element[0] + "<" + _guard_element[1]
 	} else if strings.Contains(guard, ">") {
 		_guard_element := del_black(guard, ">")
-		guard = "[" + _guard_element[0] + "==" + _guard_element[1] + ")"
+		guard = _guard_element[0] + "<" + _guard_element[1]
 	}
 
 	return guard
 }
+
+func mapGuard_greaterthan(guard string) string {
+	if strings.Contains(guard, "<=") {
+		_guard_element := del_black(guard, "<=")
+		guard = _guard_element[0] + ">" + _guard_element[1]
+	} else if strings.Contains(guard, "<") {
+		_guard_element := del_black(guard, "<")
+		guard = _guard_element[0] + ">" + _guard_element[1]
+	} else if strings.Contains(guard, "==") {
+		_guard_element := del_black(guard, "==")
+		guard = _guard_element[0] + ">" + _guard_element[1]
+	} else if strings.Contains(guard, ">=") {
+		_guard_element := del_black(guard, ">=")
+		guard = _guard_element[0] + ">" + _guard_element[1]
+	} else if strings.Contains(guard, ">") {
+		_guard_element := del_black(guard, ">")
+		guard = _guard_element[0] + ">" + _guard_element[1]
+	}
+
+	return guard
+}
+
 func del_black(guard string, operater string) []string {
 	var _guard_element []string
 	_slice := strings.Split(guard, operater)
@@ -476,6 +526,7 @@ func Edge_Sort(edge []*etree.Element, clock [][]string, tem_num int) ([]*etree.E
 	sort.Slice(time_flow, func(i, j int) bool {
 		return time_flow[i].clock < time_flow[j].clock
 	})
+
 	for i := 0; i < len(time_flow); i++ {
 		Edge_prime = append(Edge_prime, time_flow[i].edge)
 	}
@@ -551,8 +602,21 @@ func find_clock_element(clock [][]string, _guard_element []string, tem_num int) 
 	}
 	return 0
 }
-func find_int_element(clock [][]string, _guard_element []string, tem_num int) int {
+func find_int_element_ispossible(clock [][]string, _guard string, tem_num int) int {
 	val := 0
+	_guard_element := make([]string, 0)
+	if strings.Contains(_guard, "<=") {
+		_guard_element = del_black(_guard, "<=")
+	} else if strings.Contains(_guard, "<") {
+		_guard_element = del_black(_guard, "<")
+	} else if strings.Contains(_guard, "==") {
+		_guard_element = del_black(_guard, "==")
+	} else if strings.Contains(_guard, ">=") {
+		_guard_element = del_black(_guard, ">=")
+	} else if strings.Contains(_guard, ">") {
+		_guard_element = del_black(_guard, ">")
+	}
+
 	for i := 0; i < len(_guard_element); i++ {
 		for j := 0; j < len(clock[tem_num]); j++ {
 			if _guard_element[i] != clock[tem_num][j] {
@@ -580,4 +644,36 @@ func find_int_element_timeflow(clock [][]string, _guard_element []string, tem_nu
 		}
 	}
 	return -1
+}
+func find_int_element(clock [][]string, _guard_element []string, tem_num int) int {
+	val := 0
+	for i := 0; i < len(_guard_element); i++ {
+		for j := 0; j < len(clock[tem_num]); j++ {
+			if _guard_element[i] != clock[tem_num][j] {
+				val, _ = strconv.Atoi(_guard_element[i])
+				return val
+			}
+		}
+	}
+	return 0
+}
+
+func deduplication(clock [][]string, edge []*etree.Element, tem_num int) []*etree.Element {
+	e_prime := make([]*etree.Element, 0)
+	_current_value := 0
+	_element := 0
+	for i, value := range edge {
+		for _, label := range value.FindElements("label") {
+			if label.Attr[0].Value == "guard" {
+				_element = find_int_element_ispossible(clock, label.Text(), tem_num)
+			}
+		}
+		if i == 0 {
+			e_prime = append(e_prime, value)
+		} else if _current_value != _element {
+			e_prime = append(e_prime, value)
+		}
+		_current_value = _element
+	}
+	return e_prime
 }
