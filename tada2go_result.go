@@ -4,14 +4,14 @@ package main
 #define N 6			// const int N = 6;
 typedef int id_t;
 
-typedef struct Local{
+typedef struct Local{           //구조체변환
         id_t list[N+1];
         int len;
 } Local;
 
-void enqueue(Local *local, id_t element)
+void enqueue(Local *local, id_t element)        //구조체 인자로
 {
-        local->list[local->len++] = element;
+        local->list[local->len++] = element;    //구조체 값 사용시 멤버 접근하는 ->사용
 }
 */
 import "C"

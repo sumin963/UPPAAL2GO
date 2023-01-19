@@ -1,55 +1,63 @@
 package main
 
 /*
-int list[5]={1,2,3,4,5};
-int len=3;
+#define N 6			// const int N = 6;
+typedef int id_t;
 
-int tail()
+typedef struct Local{           //구조체변환
+        id_t list[N+1];
+        int len;
+} Local;
+
+void enqueue(Local *local, id_t element)        //구조체 인자로
 {
-   return list[len - 1];
+        local->list[local->len++] = element;    //구조체 값 사용시 멤버 접근하는 ->사용
 }
-
-void dequeue()
-{
-        int i = 0;
-        len -= 1;
-        while (i < len)
-        {
-                list[i] = list[i + 1];
-                i++;
-        }
-        list[i] = 0;
-}
-
-void enqueue(int element)
-{
-        list[len++] = element;
-}
-
 */
 import "C"
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
+
+type Cpoint struct {
+	point C.Local
+}
 
 func main() {
+	now := time.Now()
+	routine := func() {
+		point := Cpoint{point: C.Local{list: [7]C.id_t{0, 0, 0, 0, 0, 0, 0}, len: 0}}
+		C.enqueue(&point.point, 1)
+		fmt.Println(point.point.list)
+	}
+	go routine()
+	go routine()
 
-	fmt.Println(C.enqueue(3), C.list)
-	// Output: 42
+	<-time.After(time.Second * 5)
+	t := time.Since(now)
+	fmt.Println(t)
 }
 
 /*
-const int N = 6;         // # trains
-typedef int[0,N-1] id_t;
+const int N = 6;
+typedef int[0,N-1] id_t;					//c스타일로 변형**
 
-id_t list[N+1];
-int[0,N] len;
+chan        appr[N], stop[N], leave[N];		//golang 글로벌로 빼서 선언
+urgent chan go[N];							//golang 글로벌로 빼서 선언
 
-// Put an element at the end of the queue
+//local
+clock x;									//golang 글로벌로 빼서 선언
+
+
+id_t list[N+1];								//변형안해도됨 typedef만 제대로되면
+int[0,N] len;								//c스타일로 변형**
+
 void enqueue(id_t element)
 {
         list[len++] = element;
 }
 
-// Remove the front element of the queue
 void dequeue()
 {
         int i = 0;
@@ -62,59 +70,11 @@ void dequeue()
         list[i] = 0;
 }
 
-// Returns the front element of the queue
 id_t front()
 {
    return list[0];
 }
 
-// Returns the last element of the queue
-id_t tail()
-{
-   return list[len - 1];
-}
-*/
-
-/*
-const int N = 6;         // # trains
-typedef int[0,N-1] id_t;
-
-chan        appr[N], stop[N], leave[N];
-urgent chan go[N];
-
-
-clock x;
-
-
-id_t list[N+1];
-int[0,N] len;
-
-// Put an element at the end of the queue
-void enqueue(id_t element)
-{
-        list[len++] = element;
-}
-
-// Remove the front element of the queue
-void dequeue()
-{
-        int i = 0;
-        len -= 1;
-        while (i &lt; len)
-        {
-                list[i] = list[i + 1];
-                i++;
-        }
-        list[i] = 0;
-}
-
-// Returns the front element of the queue
-id_t front()
-{
-   return list[0];
-}
-
-// Returns the last element of the queue
 id_t tail()
 {
    return list[len - 1];
