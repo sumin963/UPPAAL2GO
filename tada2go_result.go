@@ -4,42 +4,39 @@ package main
 #define N 6			// const int N = 6;
 typedef int id_t;
 
+typedef struct Local{
+        id_t list[N+1];
+        int len;
+} Local;
 
-id_t list[N+1];
-int len;
-
-void enqueue(id_t element)
+void enqueue(Local *local, id_t element)
 {
-        list[len++] = element;
-}
-
-void dequeue()
-{
-        int i = 0;
-        len -= 1;
-        while (i < len)
-        {
-                list[i] = list[i + 1];
-                i++;
-        }
-        list[i] = 0;
-}
-
-id_t front()
-{
-   return list[0];
-}
-
-id_t tail()
-{
-   return list[len - 1];
+        local->list[local->len++] = element;
 }
 */
 import "C"
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
+
+type Cpoint struct {
+	point C.Local
+}
 
 func main() {
-	fmt.Println(C.list)
+	now := time.Now()
+	routine := func() {
+		point := Cpoint{point: C.Local{list: [7]C.id_t{0, 0, 0, 0, 0, 0, 0}, len: 0}}
+		C.enqueue(&point.point, 1)
+		fmt.Println(point.point.list)
+	}
+	go routine()
+	go routine()
+
+	<-time.After(time.Second * 5)
+	t := time.Since(now)
+	fmt.Println(t)
 }
 
 /*
