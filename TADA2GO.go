@@ -17,7 +17,6 @@ func main() {
 	var dec string
 	var tem_dec []string
 	for _, e := range doc.FindElements("./nta/*") {
-		fmt.Println(e.Tag)
 		if e.Tag == "declaration" {
 			dec = e.Text()
 		}
@@ -49,14 +48,26 @@ func main() {
 		}
 		fmt.Println("\n")
 	}
-	fmt.Println(dec)
-	fmt.Println(tem_dec)
-	dec_comment_del := string_comment_del(dec)
-	tem_dec_comment_del := tem_string_comment_del(tem_dec)
+	//fmt.Println(dec)
+	//fmt.Println(tem_dec)
+	dec_string_comment_del := string_comment_del(dec)
+	tem_dec_string_comment_del := tem_string_comment_del(tem_dec)
+	dec_comment_del := dec_line_comment_del(dec_string_comment_del)
+	tem_dec_comment_del := tem_line_comment_del(tem_dec_string_comment_del)
 	fmt.Println(dec_comment_del)
 	fmt.Println(tem_dec_comment_del)
 }
+func map_dec(dec []string) []string {
+	for _, val := range dec {
+		if strings.Contains(val, "const") {
 
+		}
+	}
+	return dec
+}
+func map_const() {
+
+}
 func string_comment_del(dec string) string {
 	string_counts := strings.Count(dec, "/*")
 	dec_comment_del := ""
@@ -69,6 +80,25 @@ func string_comment_del(dec string) string {
 	}
 	return dec_comment_del
 }
+func dec_line_comment_del(dec string) []string {
+	dec_silce := strings.Split(dec, "\n")
+	for i, val := range dec_silce {
+		if strings.Index(val, "//") != (-1) {
+			dec_silce[i] = dec_silce[i][:strings.Index(val, "//")]
+		}
+	}
+	return dec_silce
+}
+func tem_line_comment_del(dec []string) [][]string {
+	dec_comment_del := make([][]string, 0)
+	for _, val := range dec {
+		array := dec_line_comment_del(val)
+		dec_comment_del = append(dec_comment_del, array)
+	}
+
+	return dec_comment_del
+}
+
 func tem_string_comment_del(dec []string) []string {
 	dec_comment_del := make([]string, len(dec))
 
