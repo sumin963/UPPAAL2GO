@@ -67,13 +67,13 @@ func main() {
 
 /*
 const int N = 6;
-typedef int[0,N-1] id_t;					//c스타일로 변형**
+typedef int[0,N-1] id_t;					        //c스타일로 변형**
 
-chan        appr[N], stop[N], leave[N];		//golang 글로벌로 빼서 선언
+chan        appr[N], stop[N], leave[N];		                        //golang 글로벌로 빼서 선언
 urgent chan go[N];							//golang 글로벌로 빼서 선언
 
 //local
-clock x;									//golang 글로벌로 빼서 선언
+clock x;								//golang 글로벌로 빼서 선언
 
 
 id_t list[N+1];								//변형안해도됨 typedef만 제대로되면

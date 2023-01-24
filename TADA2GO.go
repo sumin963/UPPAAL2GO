@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/beevik/etree"
+	. "github.com/dave/jennifer/jen"
 )
 
 var new_type []string
@@ -56,6 +57,18 @@ func main() {
 	tem_dec_comment_del := tem_line_comment_del(tem_dec_string_comment_del)
 	fmt.Println(dec_comment_del)
 	fmt.Println(tem_dec_comment_del)
+
+	f := NewFile("a")
+	for i, _ := range dec_comment_del {
+		f.Comment(dec_comment_del[i])
+	}
+	for i, val := range tem_dec_comment_del {
+		for j, _ := range val {
+			f.Comment(tem_dec_comment_del[i][j])
+		}
+	}
+	fmt.Printf("%#v", f)
+
 }
 func map_dec(dec []string) []string {
 	for _, val := range dec {
