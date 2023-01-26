@@ -1,4 +1,4 @@
-package main
+package TADA_lexer
 
 import (
 	"bufio"
@@ -261,7 +261,7 @@ func (l *Lexer) lexIdent() string {
 	}
 }
 
-func main() {
+func Lexer_TADA() {
 	file, err := os.Open("input.test")
 	if err != nil {
 		panic(err)
