@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"reflect"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -14,8 +14,10 @@ import (
 )
 
 var new_type []string
+var path = "/input.test"
 
 type Token int
+type Stack []interface{}
 
 const (
 	EOF     = iota //프로그램의 끝
@@ -86,6 +88,30 @@ var tokens = []string{
 	RETURN:  "RETURN",
 }
 
+// IsEmpty - 스택이 비어있는지 확인하는 함수
+func (s *Stack) IsEmpty() bool {
+	return len(*s) == 0
+}
+
+// Push - 스택에 값을 추가하는 함수.
+func (s *Stack) Push(data interface{}) {
+	*s = append(*s, data) // 스택 끝(top)에 값을 추가함.
+	//fmt.Printf("%d pushed to stack\n", data)
+}
+
+// Pop - 스택에 값을 제거하고 top위치에 값을 반환하는 함수.
+func (s *Stack) Pop() interface{} {
+	if s.IsEmpty() {
+		//	fmt.Println("stack is empty")
+		return nil
+	} else {
+		top := len(*s) - 1
+		data := (*s)[top] // top 위치에 있는 값을 가져 옴
+		*s = (*s)[:top]   // 스택에 마지막 데이터 제거함
+		return data
+
+	}
+}
 func (t Token) String() string {
 	return tokens[t]
 }
@@ -133,8 +159,8 @@ func (l *Lexer) Lex() (Position, Token, string) {
 			return l.pos, SEMI, ";"
 		case ',':
 			return l.pos, COMMA, ","
-		// case rune("_"):
-		// 	return l.pos, UNDERBAR, "_"
+		case '_':
+			return l.pos, UNDERBAR, "_"
 		case '+':
 			return l.pos, ADD, "+"
 		case '-':
@@ -268,8 +294,10 @@ func (l *Lexer) lexIdent() string {
 	}
 }
 
-func Lexer_TADA() {
+func Lexer_TADA() ([][]string, []Token) {
 	file, err := os.Open("input.test")
+	lexer_data := make([][]string, 0)
+	lexer_token_data := make([]Token, 0)
 	if err != nil {
 		panic(err)
 	}
@@ -280,9 +308,13 @@ func Lexer_TADA() {
 		if tok == EOF {
 			break
 		}
-
-		fmt.Printf("%d:%d\t%s\t%s\n", pos.line, pos.column, tok, lit)
+		_lexer_data := make([]string, 0)
+		_lexer_data = append(_lexer_data, strconv.Itoa(pos.line), strconv.Itoa(pos.column), lit)
+		lexer_data = append(lexer_data, _lexer_data)
+		lexer_token_data = append(lexer_token_data, tok)
+		//fmt.Printf("%d:%d\t%s\t%s\n", pos.line, pos.column, tok, lit)
 	}
+	return lexer_data, lexer_token_data
 }
 
 func main() {
@@ -332,10 +364,12 @@ func main() {
 	tem_dec_comment_del := tem_line_comment_del(tem_dec_string_comment_del)
 	fmt.Println(dec_comment_del)
 	fmt.Println(tem_dec_comment_del)
-	///여기에 코드 추가
-	Lexer_TADA()
-	fmt.Println(reflect.TypeOf(dec_comment_del[0]))
-	///마지막 정리
+	//
+
+	rst_lexer, rst_token := Lexer_TADA()
+	map_token_to_c(rst_lexer, rst_token)
+	fmt.Println(rst_lexer, "\n", rst_token)
+	//
 	f := NewFile("a")
 	for i, _ := range dec_comment_del {
 		f.Comment(dec_comment_del[i])
@@ -346,15 +380,28 @@ func main() {
 		}
 	}
 	//fmt.Printf("%#v", f)
-
 }
-func map_dec(dec []string) []string {
-	for _, val := range dec {
-		if strings.Contains(val, "const") {
 
+func map_token_to_c(lexer_data [][]string, token []Token) {
+	var stack_token Stack
+	for _, val := range token {
+		switch val {
+		case SEMI: //함수에 ;들어가는 경우도 고려해야함.
+			for j := 0; j < len(stack_token); {
+				stack_token.Pop()
+			}
+		case LBRACE:
+			fallthrough
+		case LPARENTHESIS:
+			fallthrough
+		case LBRACKET:
+		case UNDERBAR:
+		case PREFIX:
+		default:
+			stack_token.Push(val)
 		}
+		fmt.Println(stack_token)
 	}
-	return dec
 }
 func map_const() {
 

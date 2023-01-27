@@ -1,26 +1,41 @@
-abcsd = 5;
-b = a + 6;
-c + 123;
-5+12;
-const int N = 6;
-typedef int[0,N-1] id_t;
-chan        appr[N], stop[N], leave[N];
-urgent chan go[N];
-clock x;
-id_t list[N+1];
-int[0,N] len;
-void enqueue(id_t element)
-{
-    list[len++] = element;
-}
-void dequeue()
-{
-        int i = 0;
-        len -= 1;
-        while (i < len)
-        {
-                list[i] = list[i + 1];
-                i++;
-        }
-        list[i] = 0;
-}
+
+ const int N = 6;
+ typedef int[0,N-1] id_t;
+
+ chan        appr[N], stop[N], leave[N];
+ urgent chan go[N];
+
+ clock x;
+ id_t list[N+1];
+ int[0,N] len;
+
+
+ void enqueue(id_t element)
+ {
+         list[len++] = element;
+ }
+
+
+ void dequeue()
+ {
+         int i = 0;
+         len -= 1;
+         while (i < len)
+         {
+                 list[i] = list[i + 1];
+                 i++;
+         }
+         list[i] = 0;
+ }
+
+
+ id_t front()
+ {
+    return list[0];
+ }
+
+
+ id_t tail()
+ {
+    return list[len - 1];
+ }
