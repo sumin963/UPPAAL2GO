@@ -365,7 +365,30 @@ func main() {
 	fmt.Println(dec_comment_del)
 	fmt.Println(tem_dec_comment_del)
 	//
-
+	file, err := os.Create("hello.txt")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer file.Close()
+	for i, _ := range dec_comment_del {
+		n, err := file.Write([]byte(dec_comment_del[i] + "\n"))
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println(n, "바이트 저장 완료")
+	}
+	for i, val := range tem_dec_comment_del {
+		for j, _ := range val {
+			n, err := file.Write([]byte(tem_dec_comment_del[i][j] + "\n"))
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			fmt.Println(n, "바이트 저장 완료")
+		}
+	}
 	rst_lexer, rst_token := Lexer_TADA()
 	map_token_2_c(parse_TADA(rst_lexer, rst_token), rst_lexer)
 	//
