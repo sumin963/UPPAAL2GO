@@ -14,7 +14,8 @@ import (
 )
 
 var new_type []string
-var path = "/input.test"
+var path = "lexer_input.txt"
+var dec_path = "lexer_input.txt"
 
 type Token int
 type Stack []interface{}
@@ -29,6 +30,7 @@ const (
 	SEMI     // ;
 	COMMA    //,
 	UNDERBAR //_
+	SLASH    // /
 
 	// Infix ops
 	ADD // +
@@ -64,6 +66,7 @@ var tokens = []string{
 	SEMI:     ";",
 	COMMA:    ",",
 	UNDERBAR: "_",
+	SLASH:    "/",
 
 	// Infix ops
 	ADD: "+",
@@ -295,7 +298,7 @@ func (l *Lexer) lexIdent() string {
 }
 
 func Lexer_TADA() ([][]string, []Token) {
-	file, err := os.Open("input.test")
+	file, err := os.Open(path)
 	lexer_data := make([][]string, 0)
 	lexer_token_data := make([]Token, 0)
 	if err != nil {
@@ -324,11 +327,15 @@ func main() {
 	}
 	var dec string
 	var tem_dec []string
+	var tem_name []string
 	for _, e := range doc.FindElements("./nta/*") {
 		if e.Tag == "declaration" {
 			dec = e.Text()
 		}
 		if e.Tag == "template" {
+			if name := e.SelectElement("name"); name != nil {
+				tem_name = append(tem_name, name.Text())
+			}
 			if declaration := e.SelectElement("declaration"); declaration != nil {
 				tem_dec = append(tem_dec, declaration.Text())
 
@@ -354,7 +361,7 @@ func main() {
 				}
 			}
 		}
-		fmt.Println("\n")
+		//fmt.Println("\n")
 	}
 	//fmt.Println(dec)
 	//fmt.Println(tem_dec)
@@ -362,35 +369,39 @@ func main() {
 	tem_dec_string_comment_del := tem_string_comment_del(tem_dec)
 	dec_comment_del := dec_line_comment_del(dec_string_comment_del)
 	tem_dec_comment_del := tem_line_comment_del(tem_dec_string_comment_del)
-	fmt.Println(dec_comment_del)
-	fmt.Println(tem_dec_comment_del)
 	//
-	file, err := os.Create("hello.txt")
+	file, err := os.OpenFile(
+		path,
+		os.O_CREATE|os.O_RDWR|os.O_TRUNC, // 파일이 없으면 생성,읽기/쓰기, 파일을 연 뒤 내용 삭제
+		os.FileMode(0644))                // 파일 권한 666
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	defer file.Close()
 	for i, _ := range dec_comment_del {
-		n, err := file.Write([]byte(dec_comment_del[i] + "\n"))
+		_, err := file.Write([]byte(dec_comment_del[i] + "\n"))
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		fmt.Println(n, "바이트 저장 완료")
 	}
 	for i, val := range tem_dec_comment_del {
+		_, err := file.Write([]byte("//" + tem_name[i] + ";" + "\n"))
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 		for j, _ := range val {
-			n, err := file.Write([]byte(tem_dec_comment_del[i][j] + "\n"))
+			_, err := file.Write([]byte(tem_dec_comment_del[i][j] + "\n"))
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
-			fmt.Println(n, "바이트 저장 완료")
 		}
 	}
 	rst_lexer, rst_token := Lexer_TADA()
-	map_token_2_c(parse_TADA(rst_lexer, rst_token), rst_lexer)
+	map_token_2_c(parse_TADA(rst_lexer, rst_token))
 	//
 	f := NewFile("a")
 	for i, _ := range dec_comment_del {
@@ -403,88 +414,136 @@ func main() {
 	}
 	//fmt.Printf("%#v", f)
 }
-func map_token_2_c(parse [][]interface{}, lexer_data [][]string) {
-
+func contains(elems []Token, v Token) bool {
+	for _, s := range elems {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }
-func parse_TADA(lexer_data [][]string, token []Token) [][]interface{} {
-	var stack_b Stack
-	var stack_token Stack
-	var stack_syntax Stack
-	syntax := make([][]interface{}, 0)
+func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
+	file, err := os.OpenFile(
+		dec_path,
+		os.O_CREATE|os.O_RDWR|os.O_TRUNC, // 파일이 없으면 생성,읽기/쓰기, 파일을 연 뒤 내용 삭제
+		os.FileMode(0644))                // 파일 권한 666
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer file.Close()
+	fmt.Println(parse, "\n", parse_lexr_data, len(parse), len(parse_lexr_data))
+	_local := false
+	for i, _parse := range parse {
+		fmt.Println(i, _parse, contains(_parse, ASSIGN))
+		if _local && contains(_parse, ASSIGN) {
+
+		} else if _local && contains(_parse, IDENT) && contains(_parse, RPARENTHESIS) && contains(_parse, RBRACE) {
+
+		} else if contains(_parse, ASSIGN) { //initializer
+			//const int N = 6;
+			//로컬의 경우 struct로
+		} else if contains(_parse, IDENT) && contains(_parse, RPARENTHESIS) && contains(_parse, RBRACE) { //func 수정필요
+			//파라미터에 Local *local
+			//local->list 구조체 멤버 접근시
+		} else if contains(_parse, SLASH) {
+			_local = true
+		} else { //dec
+			//chan ,clock
+			//int[0,6]
+			//로컬의 경우 struct로
+			if _local {
+
+			} else {
+
+			}
+		}
+
+	}
+}
+func parse_TADA(lexer_data [][]string, token []Token) ([][]Token, [][][]string) {
+	stack_b := make([]Token, 0)
+	stack_token := make([]Token, 0)
+	syntax := make([][]Token, 0)
+	stack_lex := make([][]string, 0)
+	syntax_lex_data := make([][][]string, 0)
+	var _pop_item_b Token
+	var _pop_item_token Token
 	for i, _ := range lexer_data {
+
 		switch token[i] {
 		case SEMI:
-			if stack_b.IsEmpty() {
-				//fmt.Println(stack_token)
-				_syntax := make([]interface{}, 0)
-				for !stack_token.IsEmpty() {
-					_token := stack_token.Pop()
-					stack_syntax.Push(_token)
-				}
-				for !stack_syntax.IsEmpty() {
-					_token := stack_syntax.Pop()
-					_syntax = append(_syntax, _token)
-				}
+
+			if len(stack_b) == 0 {
+				_syntax := stack_token
+				_syntax_lex_data := stack_lex
+				stack_token = make([]Token, 0)
+				stack_lex = make([][]string, 0)
 				syntax = append(syntax, _syntax)
+				syntax_lex_data = append(syntax_lex_data, _syntax_lex_data)
 			}
 		case RBRACE: //}
-			_pop_item_b := stack_b.Pop()
-			if stack_b.IsEmpty() { //stack_b가 비어있을때
+
+			_pop_item_b = stack_b[len(stack_b)-1]
+			stack_b = stack_b[:len(stack_b)-1]
+			if len(stack_b) == 0 {
 				for {
-					_pop_item_token := stack_token.Pop()
+					_pop_item_token = stack_token[len(stack_token)-1]
+					stack_token = stack_token[:len(stack_token)-1]
+					_pop_lex_token := stack_lex[len(stack_lex)-1]
+					stack_lex = stack_lex[:len(stack_lex)-1]
+
 					if _pop_item_token == _pop_item_b {
-						stack_token.Push(_pop_item_token)
-						stack_token.Push(token[i])
-						//fmt.Println(stack_token)
-						_syntax := make([]interface{}, 0)
-						for !stack_token.IsEmpty() {
-							_token := stack_token.Pop()
-							stack_syntax.Push(_token)
-						}
-						for !stack_syntax.IsEmpty() {
-							_token := stack_syntax.Pop()
-							_syntax = append(_syntax, _token)
-						}
+						stack_token = append(stack_token, _pop_item_token, token[i])
+						stack_lex = append(stack_lex, _pop_lex_token, lexer_data[i])
+
+						_syntax := stack_token
+						_syntax_lex_data := stack_lex
+						stack_token = make([]Token, 0)
+						stack_lex = make([][]string, 0)
 						syntax = append(syntax, _syntax)
-						// for !stack_token.IsEmpty() {
-						// 	stack_token.Pop()
-						// }
+						syntax_lex_data = append(syntax_lex_data, _syntax_lex_data)
 						break
 					}
 				}
 			} else {
 				for {
-					_pop_item_token := stack_token.Pop()
+					_pop_item_token = stack_token[len(stack_token)-1]
+					stack_token = stack_token[:len(stack_token)-1]
+					stack_lex = stack_lex[:len(stack_lex)-1]
 					if _pop_item_token == _pop_item_b {
-
 						break
 					}
 				}
 			}
 		case RBRACKET, RPARENTHESIS:
-			_pop_item_b := stack_b.Pop()
-			//_comma := false
+
+			_pop_item_b = stack_b[len(stack_b)-1]
+			stack_b = stack_b[:len(stack_b)-1]
 			for {
-				_pop_item_token := stack_token.Pop()
+				_pop_item_token = stack_token[len(stack_token)-1]
+				stack_token = stack_token[:len(stack_token)-1]
+				_pop_lex_token := stack_lex[len(stack_lex)-1]
+				stack_lex = stack_lex[:len(stack_lex)-1]
 				if _pop_item_token == _pop_item_b {
-					stack_token.Push(_pop_item_token)
-					// if token[i] == RBRACKET && _comma {
-					// 	stack_token.Push(COMMA)
-					// 	_comma = false
-					// }
-					stack_token.Push(token[i])
+					stack_token = append(stack_token, _pop_item_token, token[i])
+					stack_lex = append(stack_lex, _pop_lex_token, lexer_data[i])
 					break
 				}
 			}
 
 		case LBRACE, LBRACKET, LPARENTHESIS: //{
-			stack_b.Push(token[i])
-			stack_token.Push(token[i])
+			stack_b = append(stack_b, token[i])
+			stack_token = append(stack_token, token[i])
+			stack_lex = append(stack_lex, lexer_data[i])
+		case SLASH:
+
 		default:
-			stack_token.Push(token[i])
+			stack_token = append(stack_token, token[i])
+			stack_lex = append(stack_lex, lexer_data[i])
 		}
 	}
-	return syntax
+	return syntax, syntax_lex_data
 }
 
 func string_comment_del(dec string) string {
