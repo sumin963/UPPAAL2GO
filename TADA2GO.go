@@ -102,7 +102,7 @@ func (s *Stack) Push(data interface{}) {
 // Pop - 스택에 값을 제거하고 top위치에 값을 반환하는 함수.
 func (s *Stack) Pop() interface{} {
 	if s.IsEmpty() {
-		//	fmt.Println("stack is empty")
+		//  fmt.Println("stack is empty")
 		return nil
 	} else {
 		top := len(*s) - 1
@@ -367,8 +367,7 @@ func main() {
 	//
 
 	rst_lexer, rst_token := Lexer_TADA()
-	map_token_to_c(rst_lexer, rst_token)
-	fmt.Println(rst_lexer, "\n", rst_token)
+	map_token_2_c(parse_TADA(rst_lexer, rst_token), rst_lexer)
 	//
 	f := NewFile("a")
 	for i, _ := range dec_comment_del {
@@ -381,31 +380,90 @@ func main() {
 	}
 	//fmt.Printf("%#v", f)
 }
+func map_token_2_c(parse [][]interface{}, lexer_data [][]string) {
 
-func map_token_to_c(lexer_data [][]string, token []Token) {
+}
+func parse_TADA(lexer_data [][]string, token []Token) [][]interface{} {
+	var stack_b Stack
 	var stack_token Stack
-	for _, val := range token {
-		switch val {
-		case SEMI: //함수에 ;들어가는 경우도 고려해야함.
-			for j := 0; j < len(stack_token); {
-				stack_token.Pop()
+	var stack_syntax Stack
+	syntax := make([][]interface{}, 0)
+	for i, _ := range lexer_data {
+		switch token[i] {
+		case SEMI:
+			if stack_b.IsEmpty() {
+				//fmt.Println(stack_token)
+				_syntax := make([]interface{}, 0)
+				for !stack_token.IsEmpty() {
+					_token := stack_token.Pop()
+					stack_syntax.Push(_token)
+				}
+				for !stack_syntax.IsEmpty() {
+					_token := stack_syntax.Pop()
+					_syntax = append(_syntax, _token)
+				}
+				syntax = append(syntax, _syntax)
 			}
-		case LBRACE:
-			fallthrough
-		case LPARENTHESIS:
-			fallthrough
-		case LBRACKET:
-		case UNDERBAR:
-		case PREFIX:
-		default:
-			stack_token.Push(val)
-		}
-		fmt.Println(stack_token)
-	}
-}
-func map_const() {
+		case RBRACE: //}
+			_pop_item_b := stack_b.Pop()
+			if stack_b.IsEmpty() { //stack_b가 비어있을때
+				for {
+					_pop_item_token := stack_token.Pop()
+					if _pop_item_token == _pop_item_b {
+						stack_token.Push(_pop_item_token)
+						stack_token.Push(token[i])
+						//fmt.Println(stack_token)
+						_syntax := make([]interface{}, 0)
+						for !stack_token.IsEmpty() {
+							_token := stack_token.Pop()
+							stack_syntax.Push(_token)
+						}
+						for !stack_syntax.IsEmpty() {
+							_token := stack_syntax.Pop()
+							_syntax = append(_syntax, _token)
+						}
+						syntax = append(syntax, _syntax)
+						// for !stack_token.IsEmpty() {
+						// 	stack_token.Pop()
+						// }
+						break
+					}
+				}
+			} else {
+				for {
+					_pop_item_token := stack_token.Pop()
+					if _pop_item_token == _pop_item_b {
 
+						break
+					}
+				}
+			}
+		case RBRACKET, RPARENTHESIS:
+			_pop_item_b := stack_b.Pop()
+			//_comma := false
+			for {
+				_pop_item_token := stack_token.Pop()
+				if _pop_item_token == _pop_item_b {
+					stack_token.Push(_pop_item_token)
+					// if token[i] == RBRACKET && _comma {
+					// 	stack_token.Push(COMMA)
+					// 	_comma = false
+					// }
+					stack_token.Push(token[i])
+					break
+				}
+			}
+
+		case LBRACE, LBRACKET, LPARENTHESIS: //{
+			stack_b.Push(token[i])
+			stack_token.Push(token[i])
+		default:
+			stack_token.Push(token[i])
+		}
+	}
+	return syntax
 }
+
 func string_comment_del(dec string) string {
 	string_counts := strings.Count(dec, "/*")
 	dec_comment_del := ""
