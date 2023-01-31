@@ -13,12 +13,10 @@ import (
 	. "github.com/dave/jennifer/jen"
 )
 
-var new_type []string
 var path = "lexer_input.txt"
-var dec_path = "lexer_input.txt"
+var dec_path = "cgo_input.txt"
 
 type Token int
-type Stack []interface{}
 
 const (
 	EOF     = iota //프로그램의 끝
@@ -30,7 +28,6 @@ const (
 	SEMI     // ;
 	COMMA    //,
 	UNDERBAR //_
-	SLASH    // /
 
 	// Infix ops
 	ADD // +
@@ -66,7 +63,6 @@ var tokens = []string{
 	SEMI:     ";",
 	COMMA:    ",",
 	UNDERBAR: "_",
-	SLASH:    "/",
 
 	// Infix ops
 	ADD: "+",
@@ -91,30 +87,6 @@ var tokens = []string{
 	RETURN:  "RETURN",
 }
 
-// IsEmpty - 스택이 비어있는지 확인하는 함수
-func (s *Stack) IsEmpty() bool {
-	return len(*s) == 0
-}
-
-// Push - 스택에 값을 추가하는 함수.
-func (s *Stack) Push(data interface{}) {
-	*s = append(*s, data) // 스택 끝(top)에 값을 추가함.
-	//fmt.Printf("%d pushed to stack\n", data)
-}
-
-// Pop - 스택에 값을 제거하고 top위치에 값을 반환하는 함수.
-func (s *Stack) Pop() interface{} {
-	if s.IsEmpty() {
-		//  fmt.Println("stack is empty")
-		return nil
-	} else {
-		top := len(*s) - 1
-		data := (*s)[top] // top 위치에 있는 값을 가져 옴
-		*s = (*s)[:top]   // 스택에 마지막 데이터 제거함
-		return data
-
-	}
-}
 func (t Token) String() string {
 	return tokens[t]
 }
@@ -365,43 +337,32 @@ func main() {
 	}
 	//fmt.Println(dec)
 	//fmt.Println(tem_dec)
-	dec_string_comment_del := string_comment_del(dec)
+	dec_string_comment_del := string_comment_del(dec) // /**/ 제거
 	tem_dec_string_comment_del := tem_string_comment_del(tem_dec)
-	dec_comment_del := dec_line_comment_del(dec_string_comment_del)
+	dec_comment_del := dec_line_comment_del(dec_string_comment_del) // //제거
 	tem_dec_comment_del := tem_line_comment_del(tem_dec_string_comment_del)
 	//
 	file, err := os.OpenFile(
 		path,
 		os.O_CREATE|os.O_RDWR|os.O_TRUNC, // 파일이 없으면 생성,읽기/쓰기, 파일을 연 뒤 내용 삭제
 		os.FileMode(0644))                // 파일 권한 666
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer file.Close()
+	check(err)
 	for i, _ := range dec_comment_del {
 		_, err := file.Write([]byte(dec_comment_del[i] + "\n"))
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		check(err)
 	}
 	for i, val := range tem_dec_comment_del {
 		_, err := file.Write([]byte("//" + tem_name[i] + ";" + "\n"))
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		check(err)
 		for j, _ := range val {
 			_, err := file.Write([]byte(tem_dec_comment_del[i][j] + "\n"))
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
+			check(err)
 		}
 	}
+	file.Close()
 	rst_lexer, rst_token := Lexer_TADA()
-	map_token_2_c(parse_TADA(rst_lexer, rst_token))
+	syntax, syntax_lex_data := parse_TADA(rst_lexer, rst_token)
+	map_token_2_c(syntax, syntax_lex_data)
 	//
 	f := NewFile("a")
 	for i, _ := range dec_comment_del {
@@ -414,6 +375,11 @@ func main() {
 	}
 	//fmt.Printf("%#v", f)
 }
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
 func contains(elems []Token, v Token) bool {
 	for _, s := range elems {
 		if v == s {
@@ -423,43 +389,96 @@ func contains(elems []Token, v Token) bool {
 	return false
 }
 func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
-	file, err := os.OpenFile(
+	input_file, err := os.Open(path)
+	check(err)
+	output_file, err := os.OpenFile(
 		dec_path,
-		os.O_CREATE|os.O_RDWR|os.O_TRUNC, // 파일이 없으면 생성,읽기/쓰기, 파일을 연 뒤 내용 삭제
-		os.FileMode(0644))                // 파일 권한 666
-	if err != nil {
-		fmt.Println(err)
-		return
+		os.O_CREATE|os.O_RDWR|os.O_TRUNC,
+		os.FileMode(0644))
+	check(err)
+	reader := bufio.NewReader(input_file)
+	input_file_reader := make([][]byte, 0)
+	for {
+		//_input_file_reader := make([]string, 0)
+		line, _, err := reader.ReadLine()
+		//_input_file_reader = append(_input_file_reader, string(line))
+		input_file_reader = append(input_file_reader, line)
+		if err != nil {
+			break
+		}
 	}
-	defer file.Close()
+	fmt.Println(input_file_reader)
+	defer input_file.Close()
+	defer output_file.Close()
 	fmt.Println(parse, "\n", parse_lexr_data, len(parse), len(parse_lexr_data))
 	_local := false
 	for i, _parse := range parse {
-		fmt.Println(i, _parse, contains(_parse, ASSIGN))
+		fmt.Println(i, _parse)
 		if _local && contains(_parse, ASSIGN) {
 
 		} else if _local && contains(_parse, IDENT) && contains(_parse, RPARENTHESIS) && contains(_parse, RBRACE) {
 
 		} else if contains(_parse, ASSIGN) { //initializer
-			//const int N = 6;
-			//로컬의 경우 struct로
+			if parse[i][0] == PREFIX && parse_lexr_data[i][0][2] == "const" { //const int N = 6;		#define N 6
+				_ident := contain_index(parse[i], IDENT)
+				_int := contain_index(parse[i], INT)
+				_, err := output_file.Write([]byte("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + " " + mapping(parse_lexr_data, input_file_reader, i, _int) + "\n"))
+				check(err)
+				//				fmt.Println("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + " " + mapping(parse_lexr_data, input_file_reader, i, _int))
+			}
 		} else if contains(_parse, IDENT) && contains(_parse, RPARENTHESIS) && contains(_parse, RBRACE) { //func 수정필요
 			//파라미터에 Local *local
 			//local->list 구조체 멤버 접근시
-		} else if contains(_parse, SLASH) {
+		} else if contains(_parse, DIV) { //바꾸어야 할지도
 			_local = true
 		} else { //dec
 			//chan ,clock
 			//int[0,6]
 			//로컬의 경우 struct로
 			if _local {
-
+				if contains(_parse, CLOCK) {
+				}
 			} else {
+				if contains(_parse, CLOCK) {
+				} else if contains(_parse, CHANNEL) {
+				} else if contains(_parse, TYPEDEF) {
+				} else {
 
+				}
 			}
 		}
 
 	}
+}
+func contain_index(s []Token, substr Token) int {
+	for i, v := range s {
+		if v == substr {
+			return i
+		}
+	}
+	return 0
+}
+func mapping(parse_lexr_data [][][]string, input_file_reader [][]byte, i int, j int) string {
+	if len(parse_lexr_data[i])-1 > j {
+		return string(input_file_reader[ext_start_index(parse_lexr_data, i, j)][ext_scd_index(parse_lexr_data, i, j):ext_thd_index(parse_lexr_data, i, j)])
+
+	}
+	return string(input_file_reader[ext_start_index(parse_lexr_data, i, j)][ext_scd_index(parse_lexr_data, i, j):])
+
+}
+func ext_start_index(parse_lexr_data [][][]string, i int, j int) int {
+	rst, _ := strconv.Atoi(parse_lexr_data[i][j][0])
+	return rst - 1
+}
+func ext_scd_index(parse_lexr_data [][][]string, i int, j int) int {
+	rst, _ := strconv.Atoi(parse_lexr_data[i][j][1])
+	return rst - 1
+}
+func ext_thd_index(parse_lexr_data [][][]string, i int, j int) int {
+
+	rst, _ := strconv.Atoi(parse_lexr_data[i][j+1][1]) //i=line, j=token, h 0 = start line, h 1 start string, h 2 token
+	return rst - 1
+
 }
 func parse_TADA(lexer_data [][]string, token []Token) ([][]Token, [][][]string) {
 	stack_b := make([]Token, 0)
@@ -536,7 +555,6 @@ func parse_TADA(lexer_data [][]string, token []Token) ([][]Token, [][][]string) 
 			stack_b = append(stack_b, token[i])
 			stack_token = append(stack_token, token[i])
 			stack_lex = append(stack_lex, lexer_data[i])
-		case SLASH:
 
 		default:
 			stack_token = append(stack_token, token[i])

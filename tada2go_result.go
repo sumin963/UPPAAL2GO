@@ -2,7 +2,7 @@ package main
 
 /*
 //global dec
-#define N 6			// const int N = 6;
+#define  N  6			// const int N = 6;
 typedef int id_t;
 
 //local dec
