@@ -488,6 +488,9 @@ func parse_TADA(lexer_data [][]string, token []Token) ([][]Token, [][][]string) 
 	syntax_lex_data := make([][][]string, 0)
 	var _pop_item_b Token
 	var _pop_item_token Token
+	var _comma_token Token
+	var _comma_lex []string
+	var _comma bool = false
 	for i, _ := range lexer_data {
 
 		switch token[i] {
@@ -536,7 +539,6 @@ func parse_TADA(lexer_data [][]string, token []Token) ([][]Token, [][][]string) 
 				}
 			}
 		case RBRACKET, RPARENTHESIS:
-
 			_pop_item_b = stack_b[len(stack_b)-1]
 			stack_b = stack_b[:len(stack_b)-1]
 			for {
@@ -544,9 +546,21 @@ func parse_TADA(lexer_data [][]string, token []Token) ([][]Token, [][][]string) 
 				stack_token = stack_token[:len(stack_token)-1]
 				_pop_lex_token := stack_lex[len(stack_lex)-1]
 				stack_lex = stack_lex[:len(stack_lex)-1]
+				if _pop_item_token == COMMA {
+					_comma_token = _pop_item_token
+					_comma_lex = _pop_lex_token
+					_comma = true
+				}
 				if _pop_item_token == _pop_item_b {
-					stack_token = append(stack_token, _pop_item_token, token[i])
-					stack_lex = append(stack_lex, _pop_lex_token, lexer_data[i])
+					stack_token = append(stack_token, _pop_item_token)
+					stack_lex = append(stack_lex, _pop_lex_token)
+					if _comma {
+						stack_token = append(stack_token, _comma_token)
+						stack_lex = append(stack_lex, _comma_lex)
+						_comma = false
+					}
+					stack_token = append(stack_token, token[i])
+					stack_lex = append(stack_lex, lexer_data[i])
 					break
 				}
 			}
@@ -559,6 +573,12 @@ func parse_TADA(lexer_data [][]string, token []Token) ([][]Token, [][][]string) 
 		default:
 			stack_token = append(stack_token, token[i])
 			stack_lex = append(stack_lex, lexer_data[i])
+			if len(stack_token) >= 3 { //ident _ ident 처리
+				if stack_token[len(stack_token)-2] == UNDERBAR && stack_token[len(stack_token)-3] == IDENT {
+					stack_token = stack_token[:len(stack_token)-2]
+					stack_lex = stack_lex[:len(stack_lex)-2]
+				}
+			}
 		}
 	}
 	return syntax, syntax_lex_data
