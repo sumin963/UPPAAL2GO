@@ -397,10 +397,10 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 	check(err)
 	reader := bufio.NewReader(input_file)
 	input_file_reader := make([][]byte, 0)
+	tem_name := make([]string, 0)
+	//tem_val := make([][]interface{}, 0)
 	for {
-		//_input_file_reader := make([]string, 0)
 		line, _, err := reader.ReadLine()
-		//_input_file_reader = append(_input_file_reader, string(line))
 		input_file_reader = append(input_file_reader, line)
 		if err != nil {
 			break
@@ -416,11 +416,20 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 		if _local && contains(_parse, ASSIGN) { //여기서 부터 시작;;;;;;;;;;;;;;;
 
 		} else if _local && contains(_parse, IDENT) && contains(_parse, RPARENTHESIS) && contains(_parse, RBRACE) {
-			fmt.Println("local _ func:", parse_lexr_data[i])
+			//fmt.Println("local _ func:", parse_lexr_data[i])
 			_start_line, _ := strconv.Atoi(parse_lexr_data[i][0][0])
 			_end_line, _ := strconv.Atoi(parse_lexr_data[i][len(parse_lexr_data[i])-1][0])
 			for j := _start_line - 1; j < _end_line; j++ {
-				fmt.Println(string(input_file_reader[j]))
+				if j == _start_line-1 {
+					_lparen := contain_index(parse[i], LPARENTHESIS)
+					_index, _ := strconv.Atoi(parse_lexr_data[i][_lparen][1])
+					fmt.Println(string(input_file_reader[j][:_index]) + tem_name[len(tem_name)-1] + " *" + tem_name[len(tem_name)-1] + " " + string(input_file_reader[j][_index:]))
+				} else {
+					if true { // 조건추가 ->
+
+					}
+					fmt.Println(string(input_file_reader[j]))
+				}
 			}
 
 		} else if contains(_parse, ASSIGN) { //initializer
@@ -434,7 +443,9 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 		} else if contains(_parse, IDENT) && contains(_parse, RPARENTHESIS) && contains(_parse, RBRACE) { //func 수정필요
 			//파라미터에 Local *local
 			//local->list 구조체 멤버 접근시
-		} else if contains(_parse, DIV) { //바꾸어야 할지도
+		} else if contains(_parse, DIV) { //바꾸어야 할지도\
+			tem_name = append(tem_name, parse_lexr_data[i][2][2])
+			//tem_val[len(tem_name)-1] = make([]interface{}, 0)
 			_local = true
 		} else { //dec
 			//chan ,clock
@@ -442,7 +453,24 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 			//로컬의 경우 struct로
 			if _local {
 				if contains(_parse, CLOCK) {
+				} else {
+					_lbracket := contain_index(parse[i], LBRACKET)
+					if parse[i][_lbracket+1] == COMMA { //[,] check
+						fmt.Println("55", _lbracket, parse_lexr_data[i], _parse)
+					} else {
+						if contains(_parse, COMMA) { //[],[] check
+						} else {
+							// _ident := contain_index(parse[i], IDENT)
+							// _int := contain_index(parse[i], INT)
+							// _, err := output_file.Write([]byte("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + mapping(parse_lexr_data, input_file_reader, i, _int) + "\n"))
+							// check(err)      아래를 주석과 같은 형태로 변환
+							_start_line, _ := strconv.Atoi(parse_lexr_data[i][0][0])
+							_scd_line, _ := strconv.Atoi(parse_lexr_data[i][1][0])
+							fmt.Println("56", string(input_file_reader[_start_line][0]), string(input_file_reader[_start_line][_scd_line]), parse_lexr_data[i])
+						}
+					}
 				}
+				//id_t list[N+1];
 			} else {
 				if contains(_parse, CLOCK) {
 				} else if contains(_parse, CHANNEL) {

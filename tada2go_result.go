@@ -4,6 +4,9 @@ package main
 //global dec
 #define  N  6			// const int N = 6;
 typedef int id_t;
+// local2
+typedef struct Local2{           //구조체변환
+} Local2;
 
 //local dec
 typedef struct Local{           //구조체변환
@@ -11,9 +14,9 @@ typedef struct Local{           //구조체변환
         int len;
 } Local;
 
-void enqueue(Local *local, id_t element)        //구조체 인자로
+void enqueue(Local *Local, id_t element)        //구조체 인자로
 {
-        local->list[local->len++] = element;    //구조체 값 사용시 멤버 접근하는 ->사용
+        Local->list[Local->len++] = element;    //구조체 값 사용시 멤버 접근하는 ->사용
 }
 
 void dequeue(Local *local)
