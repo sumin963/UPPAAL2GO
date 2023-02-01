@@ -172,7 +172,6 @@ func (l *Lexer) Lex() (Position, Token, string) {
 				startPos := l.pos
 				l.backup()
 				lit := l.lexIdent()
-				//fmt.Println(lit) //switch
 				switch lit {
 				case "return":
 					return startPos, RETURN, lit
@@ -414,17 +413,23 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 	_local := false
 	for i, _parse := range parse {
 		fmt.Println(i, _parse)
-		if _local && contains(_parse, ASSIGN) {
+		if _local && contains(_parse, ASSIGN) { //여기서 부터 시작;;;;;;;;;;;;;;;
 
 		} else if _local && contains(_parse, IDENT) && contains(_parse, RPARENTHESIS) && contains(_parse, RBRACE) {
+			fmt.Println("local _ func:", parse_lexr_data[i])
+			_start_line, _ := strconv.Atoi(parse_lexr_data[i][0][0])
+			_end_line, _ := strconv.Atoi(parse_lexr_data[i][len(parse_lexr_data[i])-1][0])
+			for j := _start_line - 1; j < _end_line; j++ {
+				fmt.Println(string(input_file_reader[j]))
+			}
 
 		} else if contains(_parse, ASSIGN) { //initializer
 			if parse[i][0] == PREFIX && parse_lexr_data[i][0][2] == "const" { //const int N = 6;		#define N 6
 				_ident := contain_index(parse[i], IDENT)
 				_int := contain_index(parse[i], INT)
-				_, err := output_file.Write([]byte("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + " " + mapping(parse_lexr_data, input_file_reader, i, _int) + "\n"))
+				_, err := output_file.Write([]byte("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + mapping(parse_lexr_data, input_file_reader, i, _int) + "\n"))
 				check(err)
-				//				fmt.Println("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + " " + mapping(parse_lexr_data, input_file_reader, i, _int))
+				//fmt.Println("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + " " + mapping(parse_lexr_data, input_file_reader, i, _int))
 			}
 		} else if contains(_parse, IDENT) && contains(_parse, RPARENTHESIS) && contains(_parse, RBRACE) { //func 수정필요
 			//파라미터에 Local *local
@@ -441,7 +446,15 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 			} else {
 				if contains(_parse, CLOCK) {
 				} else if contains(_parse, CHANNEL) {
-				} else if contains(_parse, TYPEDEF) {
+				} else if contains(_parse, TYPEDEF) { //typedef int[0,6] id_t;     typedef int id_t;
+					if contains(_parse, COMMA) {
+						_typedef := contain_index(parse[i], TYPEDEF)
+						_typeid := contain_index(parse[i], TYPEID)
+						_ident := contain_index(parse[i], IDENT)
+						_, err := output_file.Write([]byte(mapping(parse_lexr_data, input_file_reader, i, _typedef) + " " + mapping(parse_lexr_data, input_file_reader, i, _typeid) + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + "\n"))
+						check(err)
+					}
+
 				} else {
 
 				}
