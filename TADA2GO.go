@@ -398,7 +398,7 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 	reader := bufio.NewReader(input_file)
 	input_file_reader := make([][]byte, 0)
 	tem_name := make([]string, 0)
-	//tem_val := make([][]interface{}, 0)
+	tem_val := make([][][]string, 0)
 	for {
 		line, _, err := reader.ReadLine()
 		input_file_reader = append(input_file_reader, line)
@@ -427,8 +427,11 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 				} else {
 					if true { // 조건추가 ->
 
+					} else {
+						fmt.Println(string(input_file_reader[j]))
+
 					}
-					fmt.Println(string(input_file_reader[j]))
+					fmt.Println(tem_val)
 				}
 			}
 
@@ -445,7 +448,9 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 			//local->list 구조체 멤버 접근시
 		} else if contains(_parse, DIV) { //바꾸어야 할지도\
 			tem_name = append(tem_name, parse_lexr_data[i][2][2])
-			//tem_val[len(tem_name)-1] = make([]interface{}, 0)
+			tem_val = append(tem_val, make([][]string, 0)) //중요
+			_, err := output_file.Write([]byte("typedef struct " + parse_lexr_data[i][2][2] + "{\n} " + parse_lexr_data[i][2][2] + ";\n"))
+			check(err)
 			_local = true
 		} else { //dec
 			//chan ,clock
@@ -456,17 +461,22 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 				} else {
 					_lbracket := contain_index(parse[i], LBRACKET)
 					if parse[i][_lbracket+1] == COMMA { //[,] check
-						fmt.Println("55", _lbracket, parse_lexr_data[i], _parse)
+
+						_ident_line, _ := strconv.Atoi(parse_lexr_data[i][1][0])
+						_rbracket := contain_index(parse[i], RBRACKET)
+						_rbracket_stack, _ := strconv.Atoi(parse_lexr_data[i][_rbracket][1])
+						_slice := []string{mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_rbracket_stack:])}
+						tem_val[len(tem_name)-1] = append(tem_val[len(tem_name)-1], _slice)
+
+						//fmt.Println("55", mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_rbracket_stack:]))
 					} else {
 						if contains(_parse, COMMA) { //[],[] check
 						} else {
-							// _ident := contain_index(parse[i], IDENT)
-							// _int := contain_index(parse[i], INT)
-							// _, err := output_file.Write([]byte("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + mapping(parse_lexr_data, input_file_reader, i, _int) + "\n"))
-							// check(err)      아래를 주석과 같은 형태로 변환
-							_start_line, _ := strconv.Atoi(parse_lexr_data[i][0][0])
-							_scd_line, _ := strconv.Atoi(parse_lexr_data[i][1][0])
-							fmt.Println("56", string(input_file_reader[_start_line][0]), string(input_file_reader[_start_line][_scd_line]), parse_lexr_data[i])
+							_ident_line, _ := strconv.Atoi(parse_lexr_data[i][1][0])
+							_ident_stack, _ := strconv.Atoi(parse_lexr_data[i][1][1])
+							_slice := []string{mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_ident_stack-1:])}
+							tem_val[len(tem_name)-1] = append(tem_val[len(tem_name)-1], _slice)
+							//	fmt.Println("56", mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_ident_stack-1:]))
 						}
 					}
 				}
