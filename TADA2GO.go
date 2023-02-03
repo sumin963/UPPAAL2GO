@@ -387,6 +387,14 @@ func contains(elems []Token, v Token) bool {
 	}
 	return false
 }
+func contains_string(elems []string, v string) bool {
+	for _, s := range elems {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
 func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 	input_file, err := os.Open(path)
 	check(err)
@@ -425,13 +433,15 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 					_index, _ := strconv.Atoi(parse_lexr_data[i][_lparen][1])
 					fmt.Println(string(input_file_reader[j][:_index]) + tem_name[len(tem_name)-1] + " *" + tem_name[len(tem_name)-1] + " " + string(input_file_reader[j][_index:]))
 				} else {
-					if true { // 조건추가 ->
+					for k := 0; k < len(tem_val[len(tem_name)-1]); k++ {
+						if strings.Contains(string(input_file_reader[j]), tem_val[len(tem_name)-1][k][1]) {
 
-					} else {
-						fmt.Println(string(input_file_reader[j]))
+							strings.ReplaceAll(string(input_file_reader[j]), tem_val[len(tem_name)-1][k][1], tem_name[len(tem_name)-1]+"->"+tem_val[len(tem_name)-1][k][1])
+							fmt.Println(strings.ReplaceAll(string(input_file_reader[j]), tem_val[len(tem_name)-1][k][1], tem_name[len(tem_name)-1]+"->"+tem_val[len(tem_name)-1][k][1]))
 
+						}
 					}
-					fmt.Println(tem_val)
+					fmt.Println(string(input_file_reader[j]))
 				}
 			}
 
@@ -465,7 +475,8 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 						_ident_line, _ := strconv.Atoi(parse_lexr_data[i][1][0])
 						_rbracket := contain_index(parse[i], RBRACKET)
 						_rbracket_stack, _ := strconv.Atoi(parse_lexr_data[i][_rbracket][1])
-						_slice := []string{mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_rbracket_stack:])}
+
+						_slice := []string{mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_rbracket_stack : len(input_file_reader[_ident_line-1])-1])}
 						tem_val[len(tem_name)-1] = append(tem_val[len(tem_name)-1], _slice)
 
 						//fmt.Println("55", mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_rbracket_stack:]))
@@ -474,9 +485,13 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 						} else {
 							_ident_line, _ := strconv.Atoi(parse_lexr_data[i][1][0])
 							_ident_stack, _ := strconv.Atoi(parse_lexr_data[i][1][1])
-							_slice := []string{mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_ident_stack-1:])}
+							_rbracket := contain_index(parse[i], RBRACKET)
+							_lbracket := contain_index(parse[i], LBRACKET)
+							_lbracket_stack, _ := strconv.Atoi(parse_lexr_data[i][_lbracket][1])
+							_rbracket_stack, _ := strconv.Atoi(parse_lexr_data[i][_rbracket][1])
+							_slice := []string{string(input_file_reader[_ident_line-1][_lbracket_stack-1:_rbracket_stack]) + mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_ident_stack-1 : _lbracket_stack-1])}
 							tem_val[len(tem_name)-1] = append(tem_val[len(tem_name)-1], _slice)
-							//	fmt.Println("56", mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_ident_stack-1:]))
+							fmt.Println("56", string(input_file_reader[_ident_line-1][_lbracket_stack-1:_rbracket_stack])+mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_ident_stack-1:_lbracket_stack-1]))
 						}
 					}
 				}
