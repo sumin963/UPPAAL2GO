@@ -511,21 +511,7 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) [][][]string {
 
 							_, err := output_file.Write([]byte("        " + string(input_file_reader[_ident_line-1][_lbracket_stack-1:_rbracket_stack]) + mapping(parse_lexr_data, input_file_reader, i, 0) + string(input_file_reader[_ident_line-1][_ident_stack-1:_lbracket_stack-1]) + "\n"))
 							check(err)
-							// output_file, err := os.OpenFile(
-							// 	dec_path,
-							// 	os.FileMode(0644))
-							// check(err)
-							// _output_reader := bufio.NewReader(output_file)
-							// _output_file_reader := make([][]byte, 0)
-							// for {
-							// 	line, _, err := _output_reader.ReadLine()
-							// 	_output_file_reader = append(_output_file_reader, line)
-							// 	fmt.Println(string(line))
-							// 	if err != nil {
-							// 		break
-							// 	}
-							// }
-							// _output_file_reader = _output_file_reader[:len(_output_file_reader)-2]
+
 							// _, err = output_file.Write([]byte(string(input_file_reader[_ident_line-1][_lbracket_stack-1:_rbracket_stack]) + mapping(parse_lexr_data, input_file_reader, i, 0) + string(input_file_reader[_ident_line-1][_ident_stack-1:_lbracket_stack-1]) + "\n}" + parse_lexr_data[i][2][2] + ";\n"))
 							// check(err)
 							// fmt.Println(_output_file_reader[:len(_output_file_reader)-2])
