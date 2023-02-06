@@ -22,7 +22,7 @@ void enqueue(Local *Local, id_t element)        //구조체 인자로
 void dequeue(Local *local)
 {
         int i = 0;
-        local->len -= 1;
+      local->len -= 1;
         while (i < local->len)							//&lt; -> < 로 변환
         {
                 local->list[i] = local->list[i + 1];

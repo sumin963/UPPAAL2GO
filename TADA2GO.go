@@ -395,7 +395,7 @@ func contains_string(elems []string, v string) bool {
 	}
 	return false
 }
-func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
+func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) [][][]string {
 	input_file, err := os.Open(path)
 	check(err)
 	output_file, err := os.OpenFile(
@@ -431,17 +431,32 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 				if j == _start_line-1 {
 					_lparen := contain_index(parse[i], LPARENTHESIS)
 					_index, _ := strconv.Atoi(parse_lexr_data[i][_lparen][1])
-					fmt.Println(string(input_file_reader[j][:_index]) + tem_name[len(tem_name)-1] + " *" + tem_name[len(tem_name)-1] + " " + string(input_file_reader[j][_index:]))
+					//fmt.Println(string(input_file_reader[j][:_index]) + tem_name[len(tem_name)-1] + " *" + tem_name[len(tem_name)-1] + " " + string(input_file_reader[j][_index:]))
+					if string(input_file_reader[j][_index:]) == ")" {
+						_, err := output_file.Write([]byte(string(input_file_reader[j][:_index]) + tem_name[len(tem_name)-1] + " *" + tem_name[len(tem_name)-1] + " " + string(input_file_reader[j][_index:]) + "\n"))
+						check(err)
+					} else {
+						_, err := output_file.Write([]byte(string(input_file_reader[j][:_index]) + tem_name[len(tem_name)-1] + " *" + tem_name[len(tem_name)-1] + ", " + string(input_file_reader[j][_index:]) + "\n"))
+						check(err)
+					}
+
 				} else {
+					_mapping_bool := false
 					for k := 0; k < len(tem_val[len(tem_name)-1]); k++ {
 						if strings.Contains(string(input_file_reader[j]), tem_val[len(tem_name)-1][k][1]) {
 
 							strings.ReplaceAll(string(input_file_reader[j]), tem_val[len(tem_name)-1][k][1], tem_name[len(tem_name)-1]+"->"+tem_val[len(tem_name)-1][k][1])
-							fmt.Println(strings.ReplaceAll(string(input_file_reader[j]), tem_val[len(tem_name)-1][k][1], tem_name[len(tem_name)-1]+"->"+tem_val[len(tem_name)-1][k][1]))
+							//fmt.Println(strings.ReplaceAll(string(input_file_reader[j]), tem_val[len(tem_name)-1][k][1], tem_name[len(tem_name)-1]+"->"+tem_val[len(tem_name)-1][k][1]))
+							_, err := output_file.Write([]byte(strings.ReplaceAll(string(input_file_reader[j]), tem_val[len(tem_name)-1][k][1], tem_name[len(tem_name)-1]+"->"+tem_val[len(tem_name)-1][k][1]) + "\n"))
+							check(err)
+							_mapping_bool = true
 
 						}
 					}
-					fmt.Println(string(input_file_reader[j]))
+					if _mapping_bool == false {
+						_, err := output_file.Write([]byte(string(input_file_reader[j]) + "\n"))
+						check(err)
+					}
 				}
 			}
 
@@ -478,7 +493,8 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 
 						_slice := []string{mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_rbracket_stack : len(input_file_reader[_ident_line-1])-1])}
 						tem_val[len(tem_name)-1] = append(tem_val[len(tem_name)-1], _slice)
-
+						_, err := output_file.Write([]byte("        " + mapping(parse_lexr_data, input_file_reader, i, 0) + string(input_file_reader[_ident_line-1][_rbracket_stack:]) + "\n"))
+						check(err)
 						//fmt.Println("55", mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_rbracket_stack:]))
 					} else {
 						if contains(_parse, COMMA) { //[],[] check
@@ -491,7 +507,28 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 							_rbracket_stack, _ := strconv.Atoi(parse_lexr_data[i][_rbracket][1])
 							_slice := []string{string(input_file_reader[_ident_line-1][_lbracket_stack-1:_rbracket_stack]) + mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_ident_stack-1 : _lbracket_stack-1])}
 							tem_val[len(tem_name)-1] = append(tem_val[len(tem_name)-1], _slice)
-							fmt.Println("56", string(input_file_reader[_ident_line-1][_lbracket_stack-1:_rbracket_stack])+mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_ident_stack-1:_lbracket_stack-1]))
+							//fmt.Println("56", string(input_file_reader[_ident_line-1][_lbracket_stack-1:_rbracket_stack])+mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_ident_stack-1:_lbracket_stack-1]))
+
+							_, err := output_file.Write([]byte("        " + string(input_file_reader[_ident_line-1][_lbracket_stack-1:_rbracket_stack]) + mapping(parse_lexr_data, input_file_reader, i, 0) + string(input_file_reader[_ident_line-1][_ident_stack-1:_lbracket_stack-1]) + "\n"))
+							check(err)
+							// output_file, err := os.OpenFile(
+							// 	dec_path,
+							// 	os.FileMode(0644))
+							// check(err)
+							// _output_reader := bufio.NewReader(output_file)
+							// _output_file_reader := make([][]byte, 0)
+							// for {
+							// 	line, _, err := _output_reader.ReadLine()
+							// 	_output_file_reader = append(_output_file_reader, line)
+							// 	fmt.Println(string(line))
+							// 	if err != nil {
+							// 		break
+							// 	}
+							// }
+							// _output_file_reader = _output_file_reader[:len(_output_file_reader)-2]
+							// _, err = output_file.Write([]byte(string(input_file_reader[_ident_line-1][_lbracket_stack-1:_rbracket_stack]) + mapping(parse_lexr_data, input_file_reader, i, 0) + string(input_file_reader[_ident_line-1][_ident_stack-1:_lbracket_stack-1]) + "\n}" + parse_lexr_data[i][2][2] + ";\n"))
+							// check(err)
+							// fmt.Println(_output_file_reader[:len(_output_file_reader)-2])
 						}
 					}
 				}
@@ -515,6 +552,8 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) {
 		}
 
 	}
+	//return chan, clock 추가 해야 할듯
+	return tem_val
 }
 func contain_index(s []Token, substr Token) int {
 	for i, v := range s {

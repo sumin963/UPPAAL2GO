@@ -4,3 +4,28 @@ typedef struct Train{
 } Train;
 typedef struct Gate{
 } Gate;
+        [N+1]id_t list
+        int len;
+void enqueue(Gate *Gate, id_t element)
+{
+        Gate->list[len++] = element;
+}
+void dequeue(Gate *Gate )
+{
+        int i = 0;
+       Gate-> len -= 1;
+        while (i <Gate-> len)
+        {
+                Gate->list[i] = Gate->list[i + 1];
+                i++;
+        }
+        Gate->list[i] = 0;
+}
+id_t front(Gate *Gate )
+{
+   return Gate->list[0];
+}
+id_t tail(Gate *Gate )
+{
+   return Gate->list[len - 1];
+}
