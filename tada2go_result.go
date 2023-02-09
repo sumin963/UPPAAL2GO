@@ -48,16 +48,50 @@ func main() {
 	leave := make([]chan chan_t, C.N)
 	Go := make([]chan chan_t, C.N)
 
-	train := func() {
+	train := func(id int) {
 		local_val := C.Train{}
 		now := time.Now()    //clock t;
 		t := time.Since(now) // Cumulative clock t
 
+	safe:
+		fmt.Println("safe location")
+		appr[id] <- chan_t{}
+		now = time.Now()
+		goto appr
+	appr:
+		fmt.Println("appr location")
+		t = time.Since(now)
 	}
-	gate := func() {
+
+	gate := func() { //selcet부분과, 하나의 로케이션에서 엣지가 여러개일떄 자동으로 생성하는 방법 고려.
+
 		local_val := C.Gate{list: [7]C.id_t{0, 0, 0, 0, 0, 0, 0}, len: 0}
 
+	free:
+		if C.len > 0 {
+			select {
+			case <-appr[0]:
+				C.enqueue(0)
+				goto occ
+			}
+		} else if C.len == 0 {
+			Go[C.front()] <- chan_t{}
+			goto occ
+		}
+	occ:
+		select {
+		case <-leave[C.front()]:
+			C.dequeue()
+			goto free
+		case appr[0]:
+			C.enqueue(0)
+			goto annoy
+		}
+	annoy:
+		stop[C.tail()] <- chan_t{}
+		goto occ
 	}
+
 	now := time.Now()
 	routine := func() {
 		point := C.Gate{list: [7]C.id_t{0, 0, 0, 0, 0, 0, 0}, len: 3}
