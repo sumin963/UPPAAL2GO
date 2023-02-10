@@ -68,27 +68,27 @@ func main() {
 		local_val := C.Gate{list: [7]C.id_t{0, 0, 0, 0, 0, 0, 0}, len: 0}
 
 	free:
-		if C.len > 0 {
+		if local_val.len > 0 {
 			select {
 			case <-appr[0]:
-				C.enqueue(0)
+				C.enqueue(&local_val, 0)
 				goto occ
 			}
-		} else if C.len == 0 {
-			Go[C.front()] <- chan_t{}
+		} else if local_val.len == 0 {
+			Go[C.front(&local_val)] <- chan_t{}
 			goto occ
 		}
 	occ:
 		select {
-		case <-leave[C.front()]:
-			C.dequeue()
+		case <-leave[C.front(&local_val)]:
+			C.dequeue(&local_val)
 			goto free
-		case appr[0]:
-			C.enqueue(0)
+		case <-appr[0]:
+			C.enqueue(&local_val, 0)
 			goto annoy
 		}
 	annoy:
-		stop[C.tail()] <- chan_t{}
+		stop[C.tail(&local_val)] <- chan_t{}
 		goto occ
 	}
 
