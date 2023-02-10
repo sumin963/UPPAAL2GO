@@ -61,6 +61,22 @@ func main() {
 	appr:
 		fmt.Println("appr location")
 		t = time.Since(now)
+	appr_1:
+		select {
+		case <-stop[id]:
+			goto stop
+		case <-time.After(time.Second * 10):
+			goto appr_2
+		}
+        appr_2:
+                select{
+                case <-stop[id]:
+			goto stop
+		case <-time.After(time.Second * 10):
+			goto appr_3
+                case :
+
+                }
 	}
 
 	gate := func() { //selcet부분과, 하나의 로케이션에서 엣지가 여러개일떄 자동으로 생성하는 방법 고려.
