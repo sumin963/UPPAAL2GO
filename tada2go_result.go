@@ -47,7 +47,7 @@ func main() {
 	stop := make([]chan chan_t, C.N)
 	leave := make([]chan chan_t, C.N)
 	Go := make([]chan chan_t, C.N)
-
+	eps := time.Millisecond * 100
 	train := func(id int) {
 		local_val := C.Train{}
 		now := time.Now()    //clock t;
@@ -62,21 +62,126 @@ func main() {
 		fmt.Println("appr location")
 		t = time.Since(now)
 	appr_1:
+		t = time.Since(now)
 		select {
 		case <-stop[id]:
 			goto stop
-		case <-time.After(time.Second * 10):
+		case <-time.After(time.Second*10 - t - eps):
 			goto appr_2
 		}
-        appr_2:
-                select{
-                case <-stop[id]:
-			goto stop
-		case <-time.After(time.Second * 10):
-			goto appr_3
-                case :
+	appr_2:
+		t = time.Since(now)
 
-                }
+		select {
+		case <-stop[id]:
+			goto stop
+		case <-time.After(time.Second*10 - t):
+			goto appr_3
+		case <-time.After(time.Second * 0):
+			goto cross
+		}
+	appr_3:
+		t = time.Since(now)
+
+		select {
+		case <-stop[id]:
+			goto stop
+		case <-time.After(time.Second*20 - t - eps):
+			goto appr_4
+		case <-time.After(time.Second * 0):
+			goto cross
+		}
+	appr_4:
+		t = time.Since(now)
+
+		select {
+		case <-stop[id]:
+			goto stop
+		case <-time.After(time.Second*20 - t):
+			goto exceptionalLoc
+		case <-time.After(time.Second * 0):
+			goto cross
+		}
+	stop:
+		t = time.Since(now)
+		select {
+		case Go[id] <- chan_t{}:
+			now = time.Now()
+			goto Go
+		}
+	Go:
+		t = time.Since(now)
+	Go_1:
+		t = time.Since(now)
+		select {
+		case <-time.After(time.Second*7 - t - eps):
+			goto Go_2
+		}
+	Go_2:
+		t = time.Since(now)
+		select {
+		case <-time.After(time.Second*7 - t):
+			goto Go_3
+		case <-time.After(time.Second * 0):
+			now = time.Now()
+
+			goto cross
+		}
+	Go_3:
+		t = time.Since(now)
+		select {
+		case <-time.After(time.Second*15 - t - eps):
+			goto Go_4
+		case <-time.After(time.Second * 0):
+			now = time.Now()
+
+			goto cross
+
+		}
+	Go_4:
+		t = time.Since(now)
+		select {
+		case <-time.After(time.Second*7 - t):
+			goto exceptionalLoc
+		case <-time.After(time.Second * 0):
+			now = time.Now()
+
+			goto cross
+		}
+	cross:
+		t = time.Since(now)
+	cross_1:
+		t = time.Since(now)
+		select {
+		case <-time.After(time.Second*3 - t - eps):
+			goto cross_2
+		}
+	cross_2:
+		t = time.Since(now)
+		select {
+		case <-time.After(time.Second*3 - t):
+			goto cross_3
+		case leave[id] <- chan_t{}:
+			goto safe
+		}
+	cross_3:
+		t = time.Since(now)
+		select {
+		case <-time.After(time.Second*5 - t - eps):
+			goto cross_4
+		case leave[id] <- chan_t{}:
+			goto safe
+		}
+	cross_4:
+		t = time.Since(now)
+		select {
+		case <-time.After(time.Second*5 - t):
+			goto exceptionalLoc
+		case leave[id] <- chan_t{}:
+			goto safe
+		}
+	exceptionalLoc:
+		fmt.Println("exceptionalLoc")
 	}
 
 	gate := func() { //selcet부분과, 하나의 로케이션에서 엣지가 여러개일떄 자동으로 생성하는 방법 고려.
@@ -84,18 +189,16 @@ func main() {
 		local_val := C.Gate{list: [7]C.id_t{0, 0, 0, 0, 0, 0, 0}, len: 0}
 
 	free:
-		if local_val.len > 0 {
-			select {
-			case <-appr[0]:
-				C.enqueue(&local_val, 0)
-				goto occ
-			}
-		} else if local_val.len == 0 {
+		select {
+		case <-when(local_val.len > 0, appr[0]): //select 수정
+			C.enqueue(&local_val, 0)
+			goto occ
+		case when(local_val.len == 0, Go[C.front(&local_val)]) <- chan_t{}:
 			Go[C.front(&local_val)] <- chan_t{}
 			goto occ
 		}
 	occ:
-		select {
+		select { //select 전체 수정
 		case <-leave[C.front(&local_val)]:
 			C.dequeue(&local_val)
 			goto free
@@ -104,28 +207,33 @@ func main() {
 			goto annoy
 		}
 	annoy:
-		stop[C.tail(&local_val)] <- chan_t{}
-		goto occ
+		select {
+		case stop[C.tail(&local_val)] <- chan_t{}:
+			goto occ
+		}
 	}
 
-	now := time.Now()
-	routine := func() {
-		point := C.Gate{list: [7]C.id_t{0, 0, 0, 0, 0, 0, 0}, len: 3}
-
-		C.enqueue(&point, 1)
-		C.enqueue(&point, 1)
-		fmt.Println(C.front(&point))
-		fmt.Println(C.tail(&point))
-		fmt.Println(point.list)
-		C.dequeue(&point)
-		fmt.Println(point.list, point.len)
-	}
-	go routine()
-	go routine()
+	go train(0)
+	go train(1)
+	go train(2)
+	go train(3)
+	go train(4)
+	go train(5)
+	go gate()
 
 	<-time.After(time.Second * 5)
-	t := time.Since(now)
-	fmt.Println(t)
+	fmt.Println()
+}
+
+// appr에서 appr_1 appr_2 appr_3 으로 보내는 함수
+// no chan, no condition, 항상 트루인 트랜지션 select 조건
+// instantaneus loc로 가는 select 조건 수정해야할수도
+
+func when(guard bool, channel chan interface{}) chan interface{} {
+	if !guard {
+		return nil
+	}
+	return channel
 }
 
 /*
