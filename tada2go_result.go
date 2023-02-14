@@ -37,6 +37,8 @@ id_t tail(Gate *Gate )
 import "C"
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -47,22 +49,46 @@ func main() {
 	stop := make([]chan chan_t, C.N)
 	leave := make([]chan chan_t, C.N)
 	Go := make([]chan chan_t, C.N)
-	eps := time.Millisecond * 100
+	for i := range appr {
+		appr[i] = make(chan chan_t)
+		stop[i] = make(chan chan_t)
+		leave[i] = make(chan chan_t)
+		Go[i] = make(chan chan_t)
+	}
+
+	eps := time.Millisecond * 10
 	train := func(id int) {
-		local_val := C.Train{}
+		//local_val := C.Train{}
+		var appr_passage []string
+		var Go_passage []string
+		var cross_passage []string
 		now := time.Now()    //clock t;
 		t := time.Since(now) // Cumulative clock t
 
 	safe:
-		fmt.Println("safe location")
+		fmt.Println("safe location", id)
 		appr[id] <- chan_t{}
 		now = time.Now()
 		goto appr
 	appr:
-		fmt.Println("appr location")
+		fmt.Println("appr location", id)
 		t = time.Since(now)
+		appr_passage = []string{"x==10", "x>10", "x==20", "x>20"}
+		switch time_passage(appr_passage, t) {
+		case 0:
+			goto appr_1
+		case 1:
+			goto appr_2
+		case 2:
+			goto appr_3
+		case 3:
+			goto appr_4
+		case 4:
+			goto exceptionalLoc
+		}
 	appr_1:
 		t = time.Since(now)
+		fmt.Println("appr_1")
 		select {
 		case <-stop[id]:
 			goto stop
@@ -70,6 +96,8 @@ func main() {
 			goto appr_2
 		}
 	appr_2:
+		fmt.Println("appr_2")
+
 		t = time.Since(now)
 
 		select {
@@ -78,6 +106,8 @@ func main() {
 		case <-time.After(time.Second*10 - t):
 			goto appr_3
 		case <-time.After(time.Second * 0):
+			now = time.Now()
+
 			goto cross
 		}
 	appr_3:
@@ -89,6 +119,8 @@ func main() {
 		case <-time.After(time.Second*20 - t - eps):
 			goto appr_4
 		case <-time.After(time.Second * 0):
+			now = time.Now()
+
 			goto cross
 		}
 	appr_4:
@@ -100,9 +132,12 @@ func main() {
 		case <-time.After(time.Second*20 - t):
 			goto exceptionalLoc
 		case <-time.After(time.Second * 0):
+			now = time.Now()
+
 			goto cross
 		}
 	stop:
+		fmt.Println("stop")
 		t = time.Since(now)
 		select {
 		case Go[id] <- chan_t{}:
@@ -111,6 +146,19 @@ func main() {
 		}
 	Go:
 		t = time.Since(now)
+		Go_passage = []string{"x==7", "x>7", "x==15", "x>15"}
+		switch time_passage(Go_passage, t) {
+		case 0:
+			goto Go_1
+		case 1:
+			goto Go_2
+		case 2:
+			goto Go_3
+		case 3:
+			goto Go_4
+		case 4:
+			goto exceptionalLoc
+		}
 	Go_1:
 		t = time.Since(now)
 		select {
@@ -150,7 +198,23 @@ func main() {
 		}
 	cross:
 		t = time.Since(now)
+		fmt.Println("cross location")
+		cross_passage = []string{"x==3", "x>3", "x==5", "x>5"}
+		switch time_passage(cross_passage, t) {
+		case 0:
+			goto cross_1
+		case 1:
+			goto cross_2
+		case 2:
+			goto cross_3
+		case 3:
+			goto cross_4
+		case 4:
+			goto exceptionalLoc
+		}
 	cross_1:
+		fmt.Println("cross_1")
+
 		t = time.Since(now)
 		select {
 		case <-time.After(time.Second*3 - t - eps):
@@ -189,15 +253,16 @@ func main() {
 		local_val := C.Gate{list: [7]C.id_t{0, 0, 0, 0, 0, 0, 0}, len: 0}
 
 	free:
+		fmt.Println("gate free")
 		select {
-		case <-when(local_val.len > 0, appr[0]): //select 수정
+		case <-when(local_val.len == 0, appr[0]): //select 수정
 			C.enqueue(&local_val, 0)
 			goto occ
-		case when(local_val.len == 0, Go[C.front(&local_val)]) <- chan_t{}:
-			Go[C.front(&local_val)] <- chan_t{}
+		case when(local_val.len > 0, Go[C.front(&local_val)]) <- chan_t{}:
 			goto occ
 		}
 	occ:
+		fmt.Println("gate occ")
 		select { //select 전체 수정
 		case <-leave[C.front(&local_val)]:
 			C.dequeue(&local_val)
@@ -221,19 +286,36 @@ func main() {
 	go train(5)
 	go gate()
 
-	<-time.After(time.Second * 5)
-	fmt.Println()
+	<-time.After(time.Second * 20)
 }
 
-// appr에서 appr_1 appr_2 appr_3 으로 보내는 함수
-// no chan, no condition, 항상 트루인 트랜지션 select 조건
+// no chan, no condition, 항상 트루인 트랜지션 select 조건, 조건을 만족하면 바운더리내에서 가는게아니라 바로감
 // instantaneus loc로 가는 select 조건 수정해야할수도
+// uppaal select
 
-func when(guard bool, channel chan interface{}) chan interface{} {
+func when(guard bool, channel chan chan_t) chan chan_t {
 	if !guard {
 		return nil
 	}
 	return channel
+}
+func time_passage(time_passage []string, ctime time.Duration) int {
+	for i, val := range time_passage { // 비교하는거 추가
+		if strings.Contains(val, "==") {
+
+			num, _ := strconv.Atoi(val[strings.Index(val, "==")+2:])
+			if time.Second*time.Duration(num) > ctime {
+				return i
+			}
+		} else if strings.Contains(val, "<") {
+			num, _ := strconv.Atoi(val[strings.Index(val, "<")+1:])
+
+			if time.Second*time.Duration(num) == ctime {
+				return i
+			}
+		}
+	}
+	return len(time_passage)
 }
 
 /*
