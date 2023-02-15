@@ -538,8 +538,11 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) [][][]string {
 					} else if _parse[0] == CHANNEL {
 						_num, _ := strconv.Atoi(parse_lexr_data[i][1][0])
 						fmt.Println(parse_lexr_data[i][1][2], string(input_file_reader[_num-1]))
-						//수정
-						_chan = append(_chan, parse_lexr_data[i][1][2])
+						if strings.Contains(string(input_file_reader[_num-1]), "[") {
+							_chan = append(_chan, parse_lexr_data[i][1][2]+"[]")
+						} else {
+							_chan = append(_chan, parse_lexr_data[i][1][2])
+						}
 					}
 					tem_chan = append(tem_chan, _chan)
 				} else if contains(_parse, TYPEDEF) { //typedef int[0,6] id_t;     typedef int id_t;
