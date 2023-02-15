@@ -114,8 +114,6 @@ func main() {
 		t = time.Since(now)
 
 		select {
-		case <-stop[id]:
-			goto stop
 		case <-time.After(time.Second*20 - t - eps):
 			goto appr_4
 		case <-time.After(time.Second * 0):
@@ -127,8 +125,6 @@ func main() {
 		t = time.Since(now)
 
 		select {
-		case <-stop[id]:
-			goto stop
 		case <-time.After(time.Second*20 - t):
 			goto exceptionalLoc
 		case <-time.After(time.Second * 0):

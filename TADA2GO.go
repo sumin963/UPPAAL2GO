@@ -407,6 +407,8 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) [][][]string {
 	input_file_reader := make([][]byte, 0)
 	tem_name := make([]string, 0)
 	tem_val := make([][][]string, 0)
+	tem_chan := make([][]string, 0)
+	tem_clock := make([][][]string, 0)
 	for {
 		line, _, err := reader.ReadLine()
 		input_file_reader = append(input_file_reader, line)
@@ -442,19 +444,23 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) [][][]string {
 
 				} else {
 					_mapping_bool := false
+					_string := string(input_file_reader[j])
 					for k := 0; k < len(tem_val[len(tem_name)-1]); k++ {
-						if strings.Contains(string(input_file_reader[j]), tem_val[len(tem_name)-1][k][1]) {
+						//fmt.Println(tem_val, strings.Trim(tem_val[len(tem_name)-1][k][1], " "))
+						if strings.Contains(_string, strings.Trim(tem_val[len(tem_name)-1][k][1], " ")) {
 
-							strings.ReplaceAll(string(input_file_reader[j]), tem_val[len(tem_name)-1][k][1], tem_name[len(tem_name)-1]+"->"+tem_val[len(tem_name)-1][k][1])
+							_string = strings.ReplaceAll(_string, tem_val[len(tem_name)-1][k][1], tem_name[len(tem_name)-1]+"->"+tem_val[len(tem_name)-1][k][1])
 							//fmt.Println(strings.ReplaceAll(string(input_file_reader[j]), tem_val[len(tem_name)-1][k][1], tem_name[len(tem_name)-1]+"->"+tem_val[len(tem_name)-1][k][1]))
-							_, err := output_file.Write([]byte(strings.ReplaceAll(string(input_file_reader[j]), tem_val[len(tem_name)-1][k][1], tem_name[len(tem_name)-1]+"->"+tem_val[len(tem_name)-1][k][1]) + "\n"))
-							check(err)
+
 							_mapping_bool = true
 
 						}
 					}
 					if _mapping_bool == false {
 						_, err := output_file.Write([]byte(string(input_file_reader[j]) + "\n"))
+						check(err)
+					} else {
+						_, err := output_file.Write([]byte(_string + "\n"))
 						check(err)
 					}
 				}
@@ -464,7 +470,10 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) [][][]string {
 			if parse[i][0] == PREFIX && parse_lexr_data[i][0][2] == "const" { //const int N = 6;		#define N 6
 				_ident := contain_index(parse[i], IDENT)
 				_int := contain_index(parse[i], INT)
-				_, err := output_file.Write([]byte("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + mapping(parse_lexr_data, input_file_reader, i, _int) + "\n"))
+				_mappintstring := "#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + mapping(parse_lexr_data, input_file_reader, i, _int)
+				_mappintstring = strings.Trim(_mappintstring, " ")
+				_mappintstring = _mappintstring[:len(_mappintstring)-1]
+				_, err := output_file.Write([]byte(_mappintstring + "\n"))
 				check(err)
 				//fmt.Println("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + " " + mapping(parse_lexr_data, input_file_reader, i, _int))
 			}
@@ -474,6 +483,7 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) [][][]string {
 		} else if contains(_parse, DIV) { //바꾸어야 할지도\
 			tem_name = append(tem_name, parse_lexr_data[i][2][2])
 			tem_val = append(tem_val, make([][]string, 0)) //중요
+			tem_clock = append(tem_clock, make([][]string, 0))
 			_, err := output_file.Write([]byte("typedef struct " + parse_lexr_data[i][2][2] + "{\n} " + parse_lexr_data[i][2][2] + ";\n"))
 			check(err)
 			_local = true
@@ -522,6 +532,16 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) [][][]string {
 			} else {
 				if contains(_parse, CLOCK) {
 				} else if contains(_parse, CHANNEL) {
+					_chan := make([]string, 0)
+					if _parse[0] == PREFIX {
+
+					} else if _parse[0] == CHANNEL {
+						_num, _ := strconv.Atoi(parse_lexr_data[i][1][0])
+						fmt.Println(parse_lexr_data[i][1][2], string(input_file_reader[_num-1]))
+						//수정
+						_chan = append(_chan, parse_lexr_data[i][1][2])
+					}
+					tem_chan = append(tem_chan, _chan)
 				} else if contains(_parse, TYPEDEF) { //typedef int[0,6] id_t;     typedef int id_t;
 					if contains(_parse, COMMA) {
 						_typedef := contain_index(parse[i], TYPEDEF)

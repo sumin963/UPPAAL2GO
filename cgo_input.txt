@@ -1,4 +1,4 @@
-#define N 6;         
+#define N 6
 typedef  int id_t;
 typedef struct Train{
 } Train;
