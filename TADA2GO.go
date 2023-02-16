@@ -362,7 +362,7 @@ func main() {
 	rst_lexer, rst_token := Lexer_TADA()
 	syntax, syntax_lex_data := parse_TADA(rst_lexer, rst_token)
 	map_token_2_c(syntax, syntax_lex_data)
-	//
+	after_treatment()
 	f := NewFile("a")
 	for i, _ := range dec_comment_del {
 		f.Comment(dec_comment_del[i])
@@ -373,6 +373,22 @@ func main() {
 		}
 	}
 	//fmt.Printf("%#v", f)
+}
+func after_treatment() {
+	input_file, err := os.Open(dec_path)
+	check(err)
+	reader := bufio.NewReader(input_file)
+	input_file_reader := make([][]byte, 0)
+	for {
+		line, _, err := reader.ReadLine()
+		input_file_reader = append(input_file_reader, line)
+		if err != nil {
+			break
+		}
+	}
+	fmt.Println(input_file_reader)
+	defer input_file.Close()
+
 }
 func check(e error) {
 	if e != nil {
@@ -395,7 +411,7 @@ func contains_string(elems []string, v string) bool {
 	}
 	return false
 }
-func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) [][][]string {
+func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string, [][]string, [][]string) {
 	input_file, err := os.Open(path)
 	check(err)
 	output_file, err := os.OpenFile(
@@ -408,7 +424,7 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) [][][]string {
 	tem_name := make([]string, 0)
 	tem_val := make([][][]string, 0)
 	tem_chan := make([][]string, 0)
-	tem_clock := make([][][]string, 0)
+	tem_clock := make([][]string, 0)
 	for {
 		line, _, err := reader.ReadLine()
 		input_file_reader = append(input_file_reader, line)
@@ -483,7 +499,7 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) [][][]string {
 		} else if contains(_parse, DIV) { //바꾸어야 할지도\
 			tem_name = append(tem_name, parse_lexr_data[i][2][2])
 			tem_val = append(tem_val, make([][]string, 0)) //중요
-			tem_clock = append(tem_clock, make([][]string, 0))
+			tem_clock = append(tem_clock, make([]string, 0))
 			_, err := output_file.Write([]byte("typedef struct " + parse_lexr_data[i][2][2] + "{\n} " + parse_lexr_data[i][2][2] + ";\n"))
 			check(err)
 			_local = true
@@ -493,6 +509,9 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) [][][]string {
 			//로컬의 경우 struct로
 			if _local {
 				if contains(_parse, CLOCK) {
+					_clock := make([]string, 0)
+					_clock = append(_clock, tem_name[len(tem_name)-1], parse_lexr_data[i][1][2])
+					tem_clock = append(tem_clock, _clock)
 				} else {
 					_lbracket := contain_index(parse[i], LBRACKET)
 					if parse[i][_lbracket+1] == COMMA { //[,] check
@@ -517,9 +536,9 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) [][][]string {
 							_rbracket_stack, _ := strconv.Atoi(parse_lexr_data[i][_rbracket][1])
 							_slice := []string{string(input_file_reader[_ident_line-1][_lbracket_stack-1:_rbracket_stack]) + mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_ident_stack-1 : _lbracket_stack-1])}
 							tem_val[len(tem_name)-1] = append(tem_val[len(tem_name)-1], _slice)
-							//fmt.Println("56", string(input_file_reader[_ident_line-1][_lbracket_stack-1:_rbracket_stack])+mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_ident_stack-1:_lbracket_stack-1]))
+							//fmt.Println("56", mapping(parse_lexr_data, input_file_reader, i, 0), string(input_file_reader[_ident_line-1][_ident_stack-1:_lbracket_stack-1])+string(input_file_reader[_ident_line-1][_lbracket_stack-1:_rbracket_stack]))
 
-							_, err := output_file.Write([]byte("        " + string(input_file_reader[_ident_line-1][_lbracket_stack-1:_rbracket_stack]) + mapping(parse_lexr_data, input_file_reader, i, 0) + string(input_file_reader[_ident_line-1][_ident_stack-1:_lbracket_stack-1]) + "\n"))
+							_, err := output_file.Write([]byte("        " + mapping(parse_lexr_data, input_file_reader, i, 0) + string(input_file_reader[_ident_line-1][_ident_stack-1:_lbracket_stack-1]) + string(input_file_reader[_ident_line-1][_lbracket_stack-1:_rbracket_stack]) + ";\n"))
 							check(err)
 
 							// _, err = output_file.Write([]byte(string(input_file_reader[_ident_line-1][_lbracket_stack-1:_rbracket_stack]) + mapping(parse_lexr_data, input_file_reader, i, 0) + string(input_file_reader[_ident_line-1][_ident_stack-1:_lbracket_stack-1]) + "\n}" + parse_lexr_data[i][2][2] + ";\n"))
@@ -531,20 +550,39 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) [][][]string {
 				//id_t list[N+1];
 			} else {
 				if contains(_parse, CLOCK) {
+					_clock := make([]string, 0)
+					_clock = append(_clock, "gobal", parse_lexr_data[i][1][2])
+					tem_clock = append(tem_clock, _clock)
 				} else if contains(_parse, CHANNEL) {
-					_chan := make([]string, 0)
 					if _parse[0] == PREFIX {
-
+						_num, _ := strconv.Atoi(parse_lexr_data[i][1][0])
+						for j, val := range _parse {
+							if val == IDENT {
+								_chan := make([]string, 0)
+								if strings.Contains(string(input_file_reader[_num-1]), "[") {
+									_chan = append(_chan, "broadcast []"+parse_lexr_data[i][1][2])
+								} else {
+									_chan = append(_chan, "broadcast"+parse_lexr_data[i][1][2])
+								}
+								_chan = append(_chan, parse_lexr_data[i][j][2])
+								tem_chan = append(tem_chan, _chan)
+							}
+						}
 					} else if _parse[0] == CHANNEL {
 						_num, _ := strconv.Atoi(parse_lexr_data[i][1][0])
-						fmt.Println(parse_lexr_data[i][1][2], string(input_file_reader[_num-1]))
-						if strings.Contains(string(input_file_reader[_num-1]), "[") {
-							_chan = append(_chan, parse_lexr_data[i][1][2]+"[]")
-						} else {
-							_chan = append(_chan, parse_lexr_data[i][1][2])
+						for j, val := range _parse {
+							if val == IDENT {
+								_chan := make([]string, 0)
+								if strings.Contains(string(input_file_reader[_num-1]), "[") {
+									_chan = append(_chan, "[]"+parse_lexr_data[i][0][2])
+								} else {
+									_chan = append(_chan, parse_lexr_data[i][0][2])
+								}
+								_chan = append(_chan, parse_lexr_data[i][j][2])
+								tem_chan = append(tem_chan, _chan)
+							}
 						}
 					}
-					tem_chan = append(tem_chan, _chan)
 				} else if contains(_parse, TYPEDEF) { //typedef int[0,6] id_t;     typedef int id_t;
 					if contains(_parse, COMMA) {
 						_typedef := contain_index(parse[i], TYPEDEF)
@@ -562,7 +600,16 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) [][][]string {
 
 	}
 	//return chan, clock 추가 해야 할듯
-	return tem_val
+	return tem_val, tem_chan, tem_clock
+}
+func slice_count(s []Token, a Token) int {
+	num := 0
+	for _, v := range s {
+		if v == a {
+			num += 1
+		}
+	}
+	return num
 }
 func contain_index(s []Token, substr Token) int {
 	for i, v := range s {
