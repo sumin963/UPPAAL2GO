@@ -361,24 +361,28 @@ func main() {
 	file.Close()
 	rst_lexer, rst_token := Lexer_TADA()
 	syntax, syntax_lex_data := parse_TADA(rst_lexer, rst_token)
-	map_token_2_c(syntax, syntax_lex_data)
-	after_treatment()
-	f := NewFile("a")
-	for i, _ := range dec_comment_del {
-		f.Comment(dec_comment_del[i])
+	a, b := map_token_2_c(syntax, syntax_lex_data)
+	cgo_dec := after_treatment(tem_name)
+	fmt.Println("33333333", a, b)
+
+	//코드 생성
+	f := NewFile("main")
+	for _, val := range cgo_dec {
+		f.CgoPreamble(string(val))
 	}
-	for i, val := range tem_dec_comment_del {
-		for j, _ := range val {
-			f.Comment(tem_dec_comment_del[i][j])
-		}
-	}
-	//fmt.Printf("%#v", f)
+	//f.CgoPreamble("3") // 수정
+	f.Func().Id("main").Params().Block(
+		Qual("fmt", "Println").Call(Lit("Hello, world")),
+	)
+
+	fmt.Printf("%#v", f)
 }
-func after_treatment() {
+func after_treatment(tem_name []string) [][]byte {
 	input_file, err := os.Open(dec_path)
 	check(err)
 	reader := bufio.NewReader(input_file)
 	input_file_reader := make([][]byte, 0)
+	output_file := make([][]byte, 0)
 	for {
 		line, _, err := reader.ReadLine()
 		input_file_reader = append(input_file_reader, line)
@@ -386,9 +390,40 @@ func after_treatment() {
 			break
 		}
 	}
-	fmt.Println(input_file_reader)
 	defer input_file.Close()
-
+	rbrace_struct := false
+	_index := 0
+	_tem_name := ""
+	for i, val := range input_file_reader {
+		if rbrace_struct == false {
+			for j := 0; j < len(tem_name); j++ {
+				if strings.Contains(string(val), tem_name[j]) && strings.Contains(string(val), "struct") {
+					rbrace_struct = true
+					_tem_name = tem_name[j]
+				}
+			}
+		} else {
+			if !strings.Contains(string(val), "       ") {
+				//output_file = append(output_file, input_file_reader[_index:i])
+				for j := _index; j < i; j++ {
+					output_file = append(output_file, input_file_reader[j])
+				}
+				output_file = append(output_file, []byte("}"+_tem_name+"; "))
+				rbrace_struct = false
+				_index = i
+				for j := 0; j < len(tem_name); j++ {
+					if strings.Contains(string(val), tem_name[j]) && strings.Contains(string(val), "struct") {
+						rbrace_struct = true
+						_tem_name = tem_name[j]
+					}
+				}
+			}
+		}
+	}
+	for j := _index; j < len(input_file_reader); j++ {
+		output_file = append(output_file, input_file_reader[j])
+	}
+	return output_file
 }
 func check(e error) {
 	if e != nil {
@@ -411,7 +446,7 @@ func contains_string(elems []string, v string) bool {
 	}
 	return false
 }
-func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string, [][]string, [][]string) {
+func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][]string, [][]string) {
 	input_file, err := os.Open(path)
 	check(err)
 	output_file, err := os.OpenFile(
@@ -432,13 +467,13 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 			break
 		}
 	}
-	fmt.Println(input_file_reader)
+	//fmt.Println(input_file_reader)
 	defer input_file.Close()
 	defer output_file.Close()
-	fmt.Println(parse, "\n", parse_lexr_data, len(parse), len(parse_lexr_data))
+	//fmt.Println(parse, "\n", parse_lexr_data, len(parse), len(parse_lexr_data))
 	_local := false
 	for i, _parse := range parse {
-		fmt.Println(i, _parse)
+		//fmt.Println(i, _parse)
 		if _local && contains(_parse, ASSIGN) { //여기서 부터 시작;;;;;;;;;;;;;;;
 
 		} else if _local && contains(_parse, IDENT) && contains(_parse, RPARENTHESIS) && contains(_parse, RBRACE) {
@@ -500,7 +535,7 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 			tem_name = append(tem_name, parse_lexr_data[i][2][2])
 			tem_val = append(tem_val, make([][]string, 0)) //중요
 			tem_clock = append(tem_clock, make([]string, 0))
-			_, err := output_file.Write([]byte("typedef struct " + parse_lexr_data[i][2][2] + "{\n} " + parse_lexr_data[i][2][2] + ";\n"))
+			_, err := output_file.Write([]byte("typedef struct " + parse_lexr_data[i][2][2] + "{\n"))
 			check(err)
 			_local = true
 		} else { //dec
@@ -600,7 +635,8 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 
 	}
 	//return chan, clock 추가 해야 할듯
-	return tem_val, tem_chan, tem_clock
+	//return tem_val, tem_chan, tem_clock
+	return tem_chan, tem_clock
 }
 func slice_count(s []Token, a Token) int {
 	num := 0

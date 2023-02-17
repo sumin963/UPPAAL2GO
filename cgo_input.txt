@@ -1,9 +1,7 @@
 #define N 6
 typedef  int id_t;
 typedef struct Train{
-} Train;
 typedef struct Gate{
-} Gate;
         id_t list[N+1];
         int len;
 void enqueue(Gate *Gate, id_t element)

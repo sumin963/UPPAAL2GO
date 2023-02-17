@@ -45,6 +45,7 @@ import (
 type chan_t struct{}
 
 func main() {
+	eps := time.Millisecond * 10
 	appr := make([]chan chan_t, C.N)
 	stop := make([]chan chan_t, C.N)
 	leave := make([]chan chan_t, C.N)
@@ -56,7 +57,6 @@ func main() {
 		Go[i] = make(chan chan_t)
 	}
 
-	eps := time.Millisecond * 10
 	train := func(id int) {
 		//local_val := C.Train{}
 		var appr_passage []string
