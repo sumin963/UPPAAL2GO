@@ -42,19 +42,17 @@ import (
 	"time"
 )
 
-type chan_t struct{}
-
 func main() {
 	eps := time.Millisecond * 10
-	appr := make([]chan chan_t, C.N)
-	stop := make([]chan chan_t, C.N)
-	leave := make([]chan chan_t, C.N)
-	Go := make([]chan chan_t, C.N)
+	appr := make([]chan bool, C.N)
+	stop := make([]chan bool, C.N)
+	leave := make([]chan bool, C.N)
+	Go := make([]chan bool, C.N)
 	for i := range appr {
-		appr[i] = make(chan chan_t)
-		stop[i] = make(chan chan_t)
-		leave[i] = make(chan chan_t)
-		Go[i] = make(chan chan_t)
+		appr[i] = make(chan bool)
+		stop[i] = make(chan bool)
+		leave[i] = make(chan bool)
+		Go[i] = make(chan bool)
 	}
 
 	train := func(id int) {
@@ -67,7 +65,7 @@ func main() {
 
 	safe:
 		fmt.Println("safe location", id)
-		appr[id] <- chan_t{}
+		appr[id] <- true
 		now = time.Now()
 		goto appr
 	appr:
@@ -136,7 +134,7 @@ func main() {
 		fmt.Println("stop")
 		t = time.Since(now)
 		select {
-		case Go[id] <- chan_t{}:
+		case Go[id] <- true:
 			now = time.Now()
 			goto Go
 		}
@@ -221,7 +219,7 @@ func main() {
 		select {
 		case <-time.After(time.Second*3 - t):
 			goto cross_3
-		case leave[id] <- chan_t{}:
+		case leave[id] <- true:
 			goto safe
 		}
 	cross_3:
@@ -229,7 +227,7 @@ func main() {
 		select {
 		case <-time.After(time.Second*5 - t - eps):
 			goto cross_4
-		case leave[id] <- chan_t{}:
+		case leave[id] <- true:
 			goto safe
 		}
 	cross_4:
@@ -237,7 +235,7 @@ func main() {
 		select {
 		case <-time.After(time.Second*5 - t):
 			goto exceptionalLoc
-		case leave[id] <- chan_t{}:
+		case leave[id] <- true:
 			goto safe
 		}
 	exceptionalLoc:
@@ -254,7 +252,7 @@ func main() {
 		case <-when(local_val.len == 0, appr[0]): //select 수정
 			C.enqueue(&local_val, 0)
 			goto occ
-		case when(local_val.len > 0, Go[C.front(&local_val)]) <- chan_t{}:
+		case when(local_val.len > 0, Go[C.front(&local_val)]) <- true:
 			goto occ
 		}
 	occ:
@@ -269,7 +267,7 @@ func main() {
 		}
 	annoy:
 		select {
-		case stop[C.tail(&local_val)] <- chan_t{}:
+		case stop[C.tail(&local_val)] <- true:
 			goto occ
 		}
 	}
@@ -289,7 +287,7 @@ func main() {
 // instantaneus loc로 가는 select 조건 수정해야할수도
 // uppaal select
 
-func when(guard bool, channel chan chan_t) chan chan_t {
+func when(guard bool, channel chan bool) chan bool {
 	if !guard {
 		return nil
 	}

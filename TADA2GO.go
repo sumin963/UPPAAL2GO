@@ -361,9 +361,9 @@ func main() {
 	file.Close()
 	rst_lexer, rst_token := Lexer_TADA()
 	syntax, syntax_lex_data := parse_TADA(rst_lexer, rst_token)
-	a, b := map_token_2_c(syntax, syntax_lex_data)
+	channel_tada, clock_tada := map_token_2_c(syntax, syntax_lex_data)
 	cgo_dec := after_treatment(tem_name)
-	fmt.Println("33333333", a, b)
+	fmt.Println("33333333", channel_tada, clock_tada)
 
 	//코드 생성
 	f := NewFile("main")
@@ -371,11 +371,20 @@ func main() {
 		f.CgoPreamble(string(val))
 	}
 	//f.CgoPreamble("3") // 수정
-	f.Func().Id("main").Params().Block(
-		Qual("fmt", "Println").Call(Lit("Hello, world")),
-	)
+	f.Func().Id("main").Params().BlockFunc(func(g *Group) {
+		for _, val := range channel_tada {
+			if strings.Contains(val[0], "[") {
+				g.Id(val[1]).Op(":=").Make(Chan().Bool())
+
+			} else {
+				g.Id(val[1]).Op(":=").Make(Chan().Bool())
+			}
+		}
+		g.Id("a").Op("=").Lit(1)
+	})
 
 	fmt.Printf("%#v", f)
+	//fmt.Printf("%#v", m)
 }
 func after_treatment(tem_name []string) [][]byte {
 	input_file, err := os.Open(dec_path)
