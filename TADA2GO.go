@@ -371,21 +371,21 @@ func main() {
 		f.CgoPreamble(string(val))
 	}
 	f.Func().Id("main").Params().BlockFunc(func(g *Group) {
-		// for _, val := range channel_tada {
-		// 	if strings.Contains(val[0], "[") {
-		// 		g.Id(val[1]).Op(":=").Make(Chan().Struct())
+		for _, val := range channel_tada {
+			if strings.Contains(val[0], "[") {
+				g.Id(val[1]).Op(":=").Make(Chan().Struct())
 
-		// 	} else {
-		// 		g.Id(val[1]).Op(":=").Make(Chan().Struct())
-		// 	}
-		// }
+			} else {
+				g.Id(val[1]).Op(":=").Make(Chan().Struct())
+			}
+		}
 		for _, val := range tem_name {
 			g.Id(val).Op(":=").Func().Params(Id("id").Int()).Block() //id, int 수정
 		}
+		g.Id("a").Op(":=").Map(String()).String().Values()
 	})
-	f.Save("uppaal2go_result.go")
-	fmt.Printf("%#v", f)
-	//fmt.Printf("%#v", m)
+	a := f.Save("uppaal2go_result.go")
+	fmt.Printf("%#v", f, a)
 }
 func after_treatment(tem_name []string) [][]byte {
 	input_file, err := os.Open(dec_path)
@@ -507,13 +507,11 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][]string, [
 					_mapping_bool := false
 					_string := string(input_file_reader[j])
 					for k := 0; k < len(tem_val[len(tem_name)-1]); k++ {
-						//fmt.Println(tem_val, strings.Trim(tem_val[len(tem_name)-1][k][1], " "))
 						if strings.Contains(_string, strings.Trim(tem_val[len(tem_name)-1][k][1], " ")) {
-
-							_string = strings.ReplaceAll(_string, tem_val[len(tem_name)-1][k][1], tem_name[len(tem_name)-1]+"->"+tem_val[len(tem_name)-1][k][1])
-							//fmt.Println(strings.ReplaceAll(string(input_file_reader[j]), tem_val[len(tem_name)-1][k][1], tem_name[len(tem_name)-1]+"->"+tem_val[len(tem_name)-1][k][1]))
+							_string = strings.ReplaceAll(_string, strings.Trim(tem_val[len(tem_name)-1][k][1], " "), tem_name[len(tem_name)-1]+"->"+tem_val[len(tem_name)-1][k][1])
 
 							_mapping_bool = true
+							fmt.Println(tem_val[len(tem_name)-1][k][1])
 
 						}
 					}

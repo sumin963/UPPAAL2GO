@@ -10,13 +10,13 @@ package main
 // }Gate;
 // void enqueue(Gate *Gate, id_t element)
 // {
-//         Gate->list[len++] = element;
+//         Gate->list[Gate-> len++] = element;
 // }
 // void dequeue(Gate *Gate )
 // {
 //         int i = 0;
-//        Gate-> len -= 1;
-//         while (i <Gate-> len)
+//         Gate-> len -= 1;
+//         while (i < Gate-> len)
 //         {
 //                 Gate->list[i] = Gate->list[i + 1];
 //                 i++;
@@ -29,7 +29,7 @@ package main
 // }
 // id_t tail(Gate *Gate )
 // {
-//    return Gate->list[len - 1];
+//    return Gate->list[Gate-> len - 1];
 // }
 //
 import "C"
