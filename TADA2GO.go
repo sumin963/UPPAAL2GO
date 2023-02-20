@@ -366,23 +366,24 @@ func main() {
 	fmt.Println("33333333", channel_tada, clock_tada)
 
 	//코드 생성
-	f := NewFile("main")
+	f := NewFilePathName("/uppaal2go_result.go", "main")
 	for _, val := range cgo_dec {
 		f.CgoPreamble(string(val))
 	}
-	//f.CgoPreamble("3") // 수정
 	f.Func().Id("main").Params().BlockFunc(func(g *Group) {
-		for _, val := range channel_tada {
-			if strings.Contains(val[0], "[") {
-				g.Id(val[1]).Op(":=").Make(Chan().Bool())
+		// for _, val := range channel_tada {
+		// 	if strings.Contains(val[0], "[") {
+		// 		g.Id(val[1]).Op(":=").Make(Chan().Struct())
 
-			} else {
-				g.Id(val[1]).Op(":=").Make(Chan().Bool())
-			}
+		// 	} else {
+		// 		g.Id(val[1]).Op(":=").Make(Chan().Struct())
+		// 	}
+		// }
+		for _, val := range tem_name {
+			g.Id(val).Op(":=").Func().Params(Id("id").Int()).Block() //id, int 수정
 		}
-		g.Id("a").Op("=").Lit(1)
 	})
-
+	f.Save("uppaal2go_result.go")
 	fmt.Printf("%#v", f)
 	//fmt.Printf("%#v", m)
 }
