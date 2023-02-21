@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 // #define N 6
 // typedef  int id_t;
 // typedef struct Train{
@@ -35,6 +37,27 @@ package main
 import "C"
 
 func main() {
-	Train := func(id int) {}
+	eps := time.Millisecond * 10
+	appr_chan := make([]chan struct{})
+	for i := range appr_chan {
+		appr_chan[i] = make(chan bool)
+	}
+	stop_chan := make([]chan struct{})
+	for i := range stop_chan {
+		stop_chan[i] = make(chan bool)
+	}
+	leave_chan := make([]chan struct{})
+	for i := range leave_chan {
+		leave_chan[i] = make(chan bool)
+	}
+	go_chan := make([]chan struct{})
+	for i := range go_chan {
+		go_chan[i] = make(chan bool)
+	}
+	Train := func(id int) {
+		x_now := time.Now()
+		x := time.Since(x_now)
+	}
 	Gate := func(id int) {}
 }
+func when() chan bool {}

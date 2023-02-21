@@ -371,21 +371,53 @@ func main() {
 		f.CgoPreamble(string(val))
 	}
 	f.Func().Id("main").Params().BlockFunc(func(g *Group) {
-		for _, val := range channel_tada {
-			if strings.Contains(val[0], "[") {
-				g.Id(val[1]).Op(":=").Make(Chan().Struct())
+		g.Id("eps").Op(":=").Qual("time", "Millisecond").Op("*").Lit(10)
 
-			} else {
-				g.Id(val[1]).Op(":=").Make(Chan().Struct())
-			}
+		for _, val := range channel_tada {
+			g.Id(val[1] + "_chan").Op(":=").Do(func(s *Statement) {
+				if strings.Contains(val[0], "[") {
+					s.Make(Index().Chan().Struct()) //chan 용량 설정
+					g.For(
+						Id("i").Op(":=").Range().Id(val[1] + "_chan"),
+					).Block(
+						Id(val[1] + "_chan").Index(Id("i")).Op("=").Make(Chan().Bool()),
+					)
+				} else {
+					s.Make(Index().Chan().Struct())
+				}
+			})
 		}
-		for _, val := range tem_name {
-			g.Id(val).Op(":=").Func().Params(Id("id").Int()).Block() //id, int 수정
+		for i, val := range tem_name {
+			g.Id(val).Op(":=").Func().Params(Id("id").Int()).BlockFunc(func(t *Group) { //id, int 수정
+				for clock_name_index, clock_name := range clock_tada[i+1] {
+					if clock_name_index > 0 {
+						t.Id(clock_name+"_now").Op(":=").Qual("time", "Now").Call()
+						t.Id(clock_name).Op(":=").Qual("time", "Since").Call(Id(clock_name + "_now"))
+					}
+				}
+
+			})
 		}
-		g.Id("a").Op(":=").Map(String()).String().Values()
 	})
+	f.Func().Id("when").Params().Chan().Bool().BlockFunc(func(g *Group) {
+
+	})
+
 	a := f.Save("uppaal2go_result.go")
 	fmt.Printf("%#v", f, a)
+}
+
+//  chan 선언시 chan 용량 C.n
+//	system dec, params 값 가져와서 lexer로 돌리고 간단하게 parsing 진행
+//	template 내용 etree를 통해 가져오기
+func make_chan(name string, isMap bool) *Statement { //참고용
+	return Id(name).Op(":=").Do(func(s *Statement) {
+		if isMap {
+			s.Map(String()).String()
+		} else {
+			s.Index().String()
+		}
+	}).Values()
 }
 func after_treatment(tem_name []string) [][]byte {
 	input_file, err := os.Open(dec_path)
@@ -511,7 +543,7 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][]string, [
 							_string = strings.ReplaceAll(_string, strings.Trim(tem_val[len(tem_name)-1][k][1], " "), tem_name[len(tem_name)-1]+"->"+tem_val[len(tem_name)-1][k][1])
 
 							_mapping_bool = true
-							fmt.Println(tem_val[len(tem_name)-1][k][1])
+							//fmt.Println(tem_val[len(tem_name)-1][k][1])
 
 						}
 					}
