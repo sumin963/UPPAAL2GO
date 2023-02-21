@@ -17,6 +17,18 @@ var path = "lexer_input.txt"
 var dec_path = "cgo_input.txt"
 
 type Token int
+type TADA_loc struct {
+	id   string
+	name string
+}
+type TADA_trastion struct {
+	source  string
+	target  string
+	selects string
+	guard   string
+	sync    string
+	assign  string
+}
 
 const (
 	EOF     = iota //프로그램의 끝
@@ -296,6 +308,8 @@ func main() {
 	if err := doc.ReadFromFile("C:\\Users\\jsm96\\gitfolder\\UPPAAL2GO\\TADA.xml"); err != nil {
 		panic(err)
 	}
+	tada_loc := make([][]TADA_loc, 0)
+	tada_trans := make([][]TADA_trastion, 0)
 	var dec string
 	var tem_dec []string
 	var tem_name []string
@@ -304,6 +318,9 @@ func main() {
 			dec = e.Text()
 		}
 		if e.Tag == "template" {
+			_tada_loc := make([]TADA_loc, 0)
+			_tada_trans := make([]TADA_trastion, 0)
+
 			if name := e.SelectElement("name"); name != nil {
 				tem_name = append(tem_name, name.Text())
 			}
@@ -312,25 +329,46 @@ func main() {
 
 			}
 			for _, l := range e.FindElements("location") {
+				var _id string
+				var _name string
 				if l.Attr[0].Key == "id" {
+					_id = l.Attr[0].Value
 				}
-				if l_label := l.SelectElement("label"); l_label != nil {
+				if l_name := l.SelectElement("name"); l_name != nil {
+					_name = l_name.Text()
 				}
+				_tada_loc = append(_tada_loc, TADA_loc{_id, _name})
 			}
+			tada_loc = append(tada_loc, _tada_loc)
 
 			for _, t := range e.FindElements("transition") {
+				var _source string
+				var _target string
+				var _select string
+				var _guard string
+				var _sync string
+				var _assign string
+
 				if t_source := t.SelectElement("source"); t_source != nil {
+					_source = t_source.Attr[0].Value
 				}
 				if t_target := t.SelectElement("target"); t_target != nil {
+					_target = t_target.Attr[0].Value
 				}
 				for _, l := range t.FindElements("label") {
 					if l.Attr[0].Value == "select" {
+						_select = l.Text()
 					} else if l.Attr[0].Value == "guard" {
+						_guard = l.Text()
 					} else if l.Attr[0].Value == "synchronisation" {
+						_sync = l.Text()
 					} else if l.Attr[0].Value == "assignment" {
+						_assign = l.Text()
 					}
 				}
+				_tada_trans = append(_tada_trans, TADA_trastion{_source, _target, _select, _guard, _sync, _assign})
 			}
+			tada_trans = append(tada_trans, _tada_trans)
 		}
 		//fmt.Println("\n")
 	}
@@ -363,8 +401,8 @@ func main() {
 	syntax, syntax_lex_data := parse_TADA(rst_lexer, rst_token)
 	channel_tada, clock_tada := map_token_2_c(syntax, syntax_lex_data)
 	cgo_dec := after_treatment(tem_name)
-	fmt.Println("33333333", channel_tada, clock_tada)
 
+	fmt.Println(tada_loc, tada_trans)
 	//코드 생성
 	f := NewFilePathName("/uppaal2go_result.go", "main")
 	for _, val := range cgo_dec {
@@ -376,25 +414,33 @@ func main() {
 		for _, val := range channel_tada {
 			g.Id(val[1] + "_chan").Op(":=").Do(func(s *Statement) {
 				if strings.Contains(val[0], "[") {
-					s.Make(Index().Chan().Struct()) //chan 용량 설정
+					// _lbracket := strings.Index(val[0], "[")
+					// _rbracket := strings.Index(val[0], "]")
+					// _string := val[0][_lbracket+1 : _rbracket]
+					//_string := val[0][strings.Index(val[0], "[")+1 : strings.Index(val[0], "]")]
+					s.Make(Index().Chan().Bool(), Qual("C", "N")) //chan 용량 설정**
 					g.For(
 						Id("i").Op(":=").Range().Id(val[1] + "_chan"),
 					).Block(
 						Id(val[1] + "_chan").Index(Id("i")).Op("=").Make(Chan().Bool()),
 					)
 				} else {
-					s.Make(Index().Chan().Struct())
+					s.Make(Index().Chan().Bool())
 				}
 			})
 		}
 		for i, val := range tem_name {
-			g.Id(val).Op(":=").Func().Params(Id("id").Int()).BlockFunc(func(t *Group) { //id, int 수정
+			g.Id(val).Op(":=").Func().Params(Id("id").Int()).BlockFunc(func(t *Group) { //id, int 수정 파리미터 수정
 				for clock_name_index, clock_name := range clock_tada[i+1] {
 					if clock_name_index > 0 {
 						t.Id(clock_name+"_now").Op(":=").Qual("time", "Now").Call()
 						t.Id(clock_name).Op(":=").Qual("time", "Since").Call(Id(clock_name + "_now"))
 					}
+
 				}
+				// t.Goto().Id("aa")
+				// t.Id("aa").Op(":")
+				// t.Id("t").Op("=").Qual("time", "Since").Call(Id("x" + "_now"))
 
 			})
 		}
@@ -408,19 +454,29 @@ func main() {
 		g.Return(Id("channel"))
 	})
 	f.Func().Id("time_passage").Params(Id("time_passage").Index().String(), Id("ctime").Qual("time", "Duration")).Int().BlockFunc(func(g *Group) {
-		// g.For(
-		// 	Id("i"), Id("val").Op(":=").Range().Id("time_passage"),
-		// ).BlockFunc(func(t *Group) {
-		// 	t.If(
-		// 		Qual("strings", "Contains").Call(Id("val"), Lit("==")),
-		// 	).Block(
-		// 		Id("num").Op(":=").Id("1"),
-		// 	).Else().If(
-		// 		Qual("strings", "Contains").Call(Id("val"), Lit("<")),
-		// 	).Block(
-		// 		Id("num").Op(":=").Id("1"),
-		// 	)
-		// })
+		g.For(
+			List(Id("i"), Id("val")).Op(":=").Range().Id("time_passage"),
+		).BlockFunc(func(t *Group) {
+			t.If(
+				Qual("strings", "Contains").Call(Id("val"), Lit("==")),
+			).Block(
+				List(Id("num"), Id("_")).Op(":=").Qual("strconv", "Atoi").Call(Id("val").Index(Qual("strings", "Index").Call(Id("val"), Lit("==")).Op("+").Lit(2), Empty())),
+				If(
+					Qual("time", "Second").Op("*").Qual("time", "Duration").Call(Id("num")).Op(">").Id("ctime"),
+				).Block(
+					Return(Id("i")),
+				),
+			).Else().If(
+				Qual("strings", "Contains").Call(Id("val"), Lit("<")),
+			).Block(
+				List(Id("num"), Id("_")).Op(":=").Qual("strconv", "Atoi").Call(Id("val").Index(Qual("strings", "Index").Call(Id("val"), Lit("==")).Op("+").Lit(1), Empty())),
+				If(
+					Qual("time", "Second").Op("*").Qual("time", "Duration").Call(Id("num")).Op("==").Id("ctime"),
+				).Block(
+					Return(Id("i")),
+				),
+			)
+		})
 		g.Return(Len(Id("time_passage")))
 	})
 
@@ -670,7 +726,9 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][]string, [
 							if val == IDENT {
 								_chan := make([]string, 0)
 								if strings.Contains(string(input_file_reader[_num-1]), "[") {
-									_chan = append(_chan, "[]"+parse_lexr_data[i][0][2])
+									_lbracket_index := strings.Index(string(input_file_reader[_num-1]), "[")
+									_rbracket_index := strings.Index(string(input_file_reader[_num-1]), "]")
+									_chan = append(_chan, "["+string(input_file_reader[_num-1][_lbracket_index+1:_rbracket_index])+"]"+parse_lexr_data[i][0][2])
 								} else {
 									_chan = append(_chan, parse_lexr_data[i][0][2])
 								}
