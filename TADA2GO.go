@@ -399,8 +399,29 @@ func main() {
 			})
 		}
 	})
-	f.Func().Id("when").Params().Chan().Bool().BlockFunc(func(g *Group) {
-
+	f.Func().Id("when").Params(Id("guard").Bool(), Id("channel").Chan().Bool()).Chan().Bool().BlockFunc(func(g *Group) {
+		g.If(
+			Op("!").Id("guard"),
+		).Block(
+			Return(Nil()),
+		)
+		g.Return(Id("channel"))
+	})
+	f.Func().Id("time_passage").Params(Id("time_passage").Index().String(), Id("ctime").Qual("time", "Duration")).Int().BlockFunc(func(g *Group) {
+		// g.For(
+		// 	Id("i"), Id("val").Op(":=").Range().Id("time_passage"),
+		// ).BlockFunc(func(t *Group) {
+		// 	t.If(
+		// 		Qual("strings", "Contains").Call(Id("val"), Lit("==")),
+		// 	).Block(
+		// 		Id("num").Op(":=").Id("1"),
+		// 	).Else().If(
+		// 		Qual("strings", "Contains").Call(Id("val"), Lit("<")),
+		// 	).Block(
+		// 		Id("num").Op(":=").Id("1"),
+		// 	)
+		// })
+		g.Return(Len(Id("time_passage")))
 	})
 
 	a := f.Save("uppaal2go_result.go")

@@ -60,4 +60,12 @@ func main() {
 	}
 	Gate := func(id int) {}
 }
-func when() chan bool {}
+func when(guard bool, channel chan bool) chan bool {
+	if !guard {
+		return nil
+	}
+	return channel
+}
+func time_passage(time_passage []string, ctime time.Duration) int {
+	return len(time_passage)
+}
