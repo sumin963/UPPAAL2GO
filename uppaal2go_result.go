@@ -65,35 +65,47 @@ func main() {
 	id0:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "Safe", "location", "x", ":", x)
+		select {}
 	id1:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "Stop", "location", "x", ":", x)
+		select {}
 	id2:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "Cross", "location", "x", ":", x)
+		select {}
 	id3:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "Appr", "location", "x", ":", x)
+		select {}
 	id4:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "Start", "location", "x", ":", x)
+		select {}
 	id2p:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "id2p", "location", "x", ":", x)
+		select {}
 	id3p:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "id3p", "location", "x", ":", x)
+		select {}
 	id4p:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "id4p", "location", "x", ":", x)
+		select {}
 	exp:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "exp", "location", "x", ":", x)
+		select {}
 	}
 	Gate := func(id int) {
 	id5:
+		select {}
 	id6:
+		select {}
 	id7:
+		select {}
 	}
 }
 func when(guard bool, channel chan bool) chan bool {

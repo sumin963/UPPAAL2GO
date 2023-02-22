@@ -29,6 +29,10 @@ type TADA_trastion struct {
 	sync    string
 	assign  string
 }
+type TADA_tem struct {
+	loc  TADA_loc
+	tans TADA_trastion
+}
 
 const (
 	EOF     = iota //프로그램의 끝
@@ -402,7 +406,9 @@ func main() {
 	channel_tada, clock_tada := map_token_2_c(syntax, syntax_lex_data)
 	cgo_dec := after_treatment(tem_name)
 
-	fmt.Println(tada_loc, tada_trans)
+	srt_trans := sort_tada_trans(tada_loc, tada_trans)
+	fmt.Println(srt_trans)
+
 	//코드 생성
 	f := NewFilePathName("/uppaal2go_result.go", "main")
 	for _, val := range cgo_dec {
@@ -438,10 +444,7 @@ func main() {
 					}
 
 				}
-				// t.Goto().Id("aa")
-				// t.Id("aa").Op(":")
-				// t.Id("t").Op("=").Qual("time", "Since").Call(Id("x" + "_now"))
-				for _, val_loc := range tada_loc[i] {
+				for j, val_loc := range tada_loc[i] {
 					t.Id(val_loc.id).Op(":")
 					for clock_name_index, clock_name := range clock_tada[i+1] {
 						if clock_name_index > 0 {
@@ -453,6 +456,17 @@ func main() {
 							}
 						}
 					}
+					//여기서부터
+					// t.Select().BlockFunc(func(s *Group) {
+					// 	for _, trans_val := range srt_trans[i][j] {
+					// 		fmt.Println(trans_val, srt_trans[i][j])
+					// 		s.Case().Block(
+					// 			//update 추가
+					// 			Goto().Id(trans_val.target),
+					// 		)
+					// 	}
+					// })
+
 				}
 			})
 		}
@@ -499,6 +513,24 @@ func main() {
 //	 chan 선언시 chan 용량 C.n
 //		system dec, params 값 가져와서 lexer로 돌리고 간단하게 parsing 진행
 //		template 내용 etree를 통해 가져오기
+func sort_tada_trans(loc [][]TADA_loc, trans [][]TADA_trastion) [][][]TADA_trastion {
+	srt_data := make([][][]TADA_trastion, 0)
+	for i, tem := range loc {
+		_srt_data := make([][]TADA_trastion, 0)
+		for _, val := range tem {
+			_trnas := make([]TADA_trastion, 0)
+			for _, trans_q := range trans[i] {
+				if trans_q.source == val.id {
+					_trnas = append(_trnas, trans_q)
+				}
+			}
+			_srt_data = append(_srt_data, _trnas)
+
+		}
+		srt_data = append(srt_data, _srt_data)
+	}
+	return srt_data
+}
 func make_chan(name string, isMap bool) *Statement { //참고용
 	return Id(name).Op(":=").Do(func(s *Statement) {
 		if isMap {
