@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -61,12 +62,38 @@ func main() {
 	Train := func(id int) {
 		x_now := time.Now()
 		x := time.Since(x_now)
-		goto aa
-	aa:
+	id0:
+		x = time.Since(x_now)
+		fmt.Println("Train", "template", "Safe", "location", "x", ":", x)
+	id1:
+		x = time.Since(x_now)
+		fmt.Println("Train", "template", "Stop", "location", "x", ":", x)
+	id2:
+		x = time.Since(x_now)
+		fmt.Println("Train", "template", "Cross", "location", "x", ":", x)
+	id3:
+		x = time.Since(x_now)
+		fmt.Println("Train", "template", "Appr", "location", "x", ":", x)
+	id4:
+		x = time.Since(x_now)
+		fmt.Println("Train", "template", "Start", "location", "x", ":", x)
+	id2p:
+		x = time.Since(x_now)
+		fmt.Println("Train", "template", "id2p", "location", "x", ":", x)
+	id3p:
+		x = time.Since(x_now)
+		fmt.Println("Train", "template", "id3p", "location", "x", ":", x)
+	id4p:
+		x = time.Since(x_now)
+		fmt.Println("Train", "template", "id4p", "location", "x", ":", x)
+	exp:
+		x = time.Since(x_now)
+		fmt.Println("Train", "template", "exp", "location", "x", ":", x)
 	}
 	Gate := func(id int) {
-		goto aa
-	aa:
+	id5:
+	id6:
+	id7:
 	}
 }
 func when(guard bool, channel chan bool) chan bool {

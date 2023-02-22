@@ -441,7 +441,19 @@ func main() {
 				// t.Goto().Id("aa")
 				// t.Id("aa").Op(":")
 				// t.Id("t").Op("=").Qual("time", "Since").Call(Id("x" + "_now"))
-
+				for _, val_loc := range tada_loc[i] {
+					t.Id(val_loc.id).Op(":")
+					for clock_name_index, clock_name := range clock_tada[i+1] {
+						if clock_name_index > 0 {
+							t.Id(clock_name).Op("=").Qual("time", "Since").Call(Id(clock_name + "_now"))
+							if val_loc.name == "" {
+								t.Qual("fmt", "Println").Call(Lit(val), Lit("template"), Lit(val_loc.id), Lit("location"), Lit(clock_name), Lit(":"), Id(clock_name))
+							} else {
+								t.Qual("fmt", "Println").Call(Lit(val), Lit("template"), Lit(val_loc.name), Lit("location"), Lit(clock_name), Lit(":"), Id(clock_name))
+							}
+						}
+					}
+				}
 			})
 		}
 	})
@@ -484,9 +496,9 @@ func main() {
 	fmt.Printf("%#v", f, a)
 }
 
-//  chan 선언시 chan 용량 C.n
-//	system dec, params 값 가져와서 lexer로 돌리고 간단하게 parsing 진행
-//	template 내용 etree를 통해 가져오기
+//	 chan 선언시 chan 용량 C.n
+//		system dec, params 값 가져와서 lexer로 돌리고 간단하게 parsing 진행
+//		template 내용 etree를 통해 가져오기
 func make_chan(name string, isMap bool) *Statement { //참고용
 	return Id(name).Op(":=").Do(func(s *Statement) {
 		if isMap {
