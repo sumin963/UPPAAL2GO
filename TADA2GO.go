@@ -457,15 +457,17 @@ func main() {
 						}
 					}
 					//여기서부터
-					// t.Select().BlockFunc(func(s *Group) {
-					// 	for _, trans_val := range srt_trans[i][j] {
-					// 		fmt.Println(trans_val, srt_trans[i][j])
-					// 		s.Case().Block(
-					// 			//update 추가
-					// 			Goto().Id(trans_val.target),
-					// 		)
-					// 	}
-					// })
+					t.Select().BlockFunc(func(s *Group) {
+						for _, trans_val := range srt_trans[i][j] {
+							fmt.Println(trans_val)
+							s.Case(
+								Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(10).Op("-").Id("t")),
+							).Block(
+								//update 추가
+								Goto().Id(trans_val.target),
+							)
+						}
+					})
 
 				}
 			})

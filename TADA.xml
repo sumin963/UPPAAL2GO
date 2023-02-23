@@ -33,72 +33,110 @@ urgent chan go[N];
     <location id="id4" x="256" y="232">
       <name x="272" y="216">Start</name>
     </location>
-    <location id="id2p" x="0" y="0"/>
-    <location id="id3p" x="0" y="0"/>
-    <location id="id4p" x="0" y="0"/>
     <location id="exp" x="0" y="0"/>
+    <location id="id2p" x="0" y="0"/>
+    <location id="id2pp" x="0" y="0"/>
+    <location id="id3p" x="0" y="0"/>
+    <location id="id3pp" x="0" y="0"/>
+    <location id="id4p" x="0" y="0"/>
+    <location id="id4pp" x="0" y="0"/>
     <init ref="id0"/>
-    <transition>
-      <source ref="id0"/>
-      <target ref="id3"/>
-      <label kind="synchronisation" x="32" y="128">appr[id]!</label>
-      <label kind="assignment" x="32" y="144">x=0</label>
-    </transition>
-    <transition>
-      <source ref="id1"/>
-      <target ref="id4"/>
-      <label kind="synchronisation" x="224" y="280">go[id]?</label>
-      <label kind="assignment" x="224" y="296">x=0</label>
-    </transition>
     <transition>
       <source ref="id2"/>
       <target ref="id2p"/>
-      <label kind="guard" x="0" y="0">[x==3]</label>
+      <label kind="guard" x="0" y="0">x==3</label>
     </transition>
     <transition>
       <source ref="id2p"/>
+      <target ref="id2pp"/>
+      <label kind="guard" x="0" y="0">x&gt;3</label>
+    </transition>
+    <transition>
+      <source ref="id2pp"/>
       <target ref="exp"/>
-      <label kind="guard" x="0" y="0">[x==5)</label>
+      <label kind="guard" x="0" y="0">x&gt;5</label>
     </transition>
     <transition>
       <source ref="id3"/>
       <target ref="id3p"/>
-      <label kind="guard" x="0" y="0">[x==10]</label>
+      <label kind="guard" x="0" y="0">x==10</label>
     </transition>
     <transition>
       <source ref="id3p"/>
+      <target ref="id3pp"/>
+      <label kind="guard" x="0" y="0">x&gt;10</label>
+    </transition>
+    <transition>
+      <source ref="id3pp"/>
       <target ref="exp"/>
-      <label kind="guard" x="0" y="0">[x==20)</label>
+      <label kind="guard" x="0" y="0">x&gt;20</label>
     </transition>
     <transition>
       <source ref="id4"/>
       <target ref="id4p"/>
-      <label kind="guard" x="0" y="0">[x==7]</label>
+      <label kind="guard" x="0" y="0">x==7</label>
     </transition>
     <transition>
       <source ref="id4p"/>
+      <target ref="id4pp"/>
+      <label kind="guard" x="0" y="0">x&gt;7</label>
+    </transition>
+    <transition>
+      <source ref="id4pp"/>
       <target ref="exp"/>
-      <label kind="guard" x="0" y="0">[x==15)</label>
+      <label kind="guard" x="0" y="0">x&gt;15</label>
+    </transition>
+    <transition>
+      <source ref="id0"/>
+      <target ref="id3"/>
+      <label kind="synchronisation" x="0" y="0">appr[id]!</label>
+      <label kind="assignment" x="0" y="0">x=0</label>
+    </transition>
+    <transition>
+      <source ref="id1"/>
+      <target ref="id4"/>
+      <label kind="synchronisation" x="0" y="0">go[id]?</label>
+      <label kind="assignment" x="0" y="0">x=0</label>
     </transition>
     <transition>
       <source ref="id2p"/>
       <target ref="id0"/>
-      <label kind="synchronisation" x="184" y="72">leave[id]!</label>
+      <label kind="synchronisation" x="0" y="0">leave[id]!</label>
+    </transition>
+    <transition>
+      <source ref="id2pp"/>
+      <target ref="id0"/>
+      <label kind="synchronisation" x="0" y="0">leave[id]!</label>
     </transition>
     <transition>
       <source ref="id3"/>
       <target ref="id1"/>
-      <label kind="synchronisation" x="88" y="296">stop[id]?</label>
+      <label kind="synchronisation" x="0" y="0">stop[id]?</label>
     </transition>
     <transition>
       <source ref="id3p"/>
       <target ref="id2"/>
-      <label kind="assignment" x="184" y="176">x=0</label>
+      <label kind="assignment" x="0" y="0">x=0</label>
+    </transition>
+    <transition>
+      <source ref="id3p"/>
+      <target ref="id1"/>
+      <label kind="synchronisation" x="0" y="0">stop[id]?</label>
+    </transition>
+    <transition>
+      <source ref="id3pp"/>
+      <target ref="id2"/>
+      <label kind="assignment" x="0" y="0">x=0</label>
     </transition>
     <transition>
       <source ref="id4p"/>
       <target ref="id2"/>
-      <label kind="assignment" x="264" y="176">x=0</label>
+      <label kind="assignment" x="0" y="0">x=0</label>
+    </transition>
+    <transition>
+      <source ref="id4pp"/>
+      <target ref="id2"/>
+      <label kind="assignment" x="0" y="0">x=0</label>
     </transition>
   </template>
   <template>
@@ -147,43 +185,35 @@ id_t tail()
     </location>
     <init ref="id7"/>
     <transition>
+      <source ref="id5"/>
+      <target ref="id6"/>
+      <label kind="synchronisation" x="0" y="0">stop[tail()]!</label>
+    </transition>
+    <transition>
       <source ref="id6"/>
       <target ref="id5"/>
-      <label kind="select" x="104" y="288">e : id_t</label>
-      <label kind="synchronisation" x="104" y="304">appr[e]?</label>
-      <label kind="assignment" x="104" y="320">enqueue(e)</label>
+      <label kind="synchronisation" x="0" y="0">appr[e]?</label>
+      <label kind="assignment" x="0" y="0">enqueue(e)</label>
+      <label kind="select" x="0" y="0">e : id_t</label>
     </transition>
     <transition>
       <source ref="id6"/>
       <target ref="id7"/>
-      <label kind="select" x="296" y="152">e : id_t</label>
-      <label kind="guard" x="296" y="168">e == front()</label>
-      <label kind="synchronisation" x="296" y="184">leave[e]?</label>
-      <label kind="assignment" x="296" y="200">dequeue()</label>
-      <nail x="288" y="264"/>
-      <nail x="288" y="128"/>
-    </transition>
-    <transition>
-      <source ref="id5"/>
-      <target ref="id6"/>
-      <label kind="synchronisation" x="224" y="304">stop[tail()]!</label>
-      <nail x="216" y="312"/>
+      <label kind="synchronisation" x="0" y="0">leave[e]?</label>
+      <label kind="assignment" x="0" y="0">dequeue()</label>
+      <label kind="select" x="0" y="0">e : id_t</label>
     </transition>
     <transition>
       <source ref="id7"/>
       <target ref="id6"/>
-      <label kind="guard" x="104" y="168">len &gt; 0</label>
-      <label kind="synchronisation" x="104" y="184">go[front()]!</label>
-      <nail x="96" y="128"/>
-      <nail x="96" y="264"/>
+      <label kind="synchronisation" x="0" y="0">go[front()]!</label>
     </transition>
     <transition>
       <source ref="id7"/>
       <target ref="id6"/>
-      <label kind="select" x="200" y="152">e : id_t</label>
-      <label kind="guard" x="200" y="168">len == 0</label>
-      <label kind="synchronisation" x="200" y="184">appr[e]?</label>
-      <label kind="assignment" x="200" y="200">enqueue(e)</label>
+      <label kind="synchronisation" x="0" y="0">appr[e]?</label>
+      <label kind="assignment" x="0" y="0">enqueue(e)</label>
+      <label kind="select" x="0" y="0">e : id_t</label>
     </transition>
   </template>
   <system>system Train, Gate;

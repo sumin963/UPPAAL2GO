@@ -32,7 +32,7 @@ type tada_transition struct {
 
 func main() {
 	doc := etree.NewDocument()
-	if err := doc.ReadFromFile("2doors.xml"); err != nil {
+	if err := doc.ReadFromFile("train-gate.xml"); err != nil {
 		panic(err)
 	}
 	f := NewFile("main")
@@ -109,7 +109,11 @@ func main() {
 
 	new_doc := doc
 	tem_num := 0
+
 	for _, e := range new_doc.FindElements("./nta/*") {
+		if e.Tag == "declaration" {
+
+		}
 		if e.Tag == "template" {
 			for _, l := range e.FindElements("location") {
 				if l_label := l.SelectElement("label"); l_label != nil {
@@ -151,7 +155,7 @@ func main() {
 					for _, label := range edge.FindElements("label") {
 						if label.Attr[0].Value == "guard" {
 							_origin_guard = label.Text()
-							_guard = mapGuard_lessthan(_origin_guard)
+							_guard = mapGuard_equal(_origin_guard)
 						}
 					}
 					_edge_element := transition_e_prime{_id, _id + "p", _guard}
@@ -393,22 +397,22 @@ func transformEdge_inv(guard string) string {
 	return guard
 }
 
-func mapGuard_lessthan(guard string) string {
+func mapGuard_equal(guard string) string {
 	if strings.Contains(guard, "<=") {
 		_guard_element := del_black(guard, "<=")
-		guard = _guard_element[0] + "<" + _guard_element[1]
+		guard = _guard_element[0] + "==" + _guard_element[1]
 	} else if strings.Contains(guard, "<") {
 		_guard_element := del_black(guard, "<")
-		guard = _guard_element[0] + "<" + _guard_element[1]
+		guard = _guard_element[0] + "==" + _guard_element[1]
 	} else if strings.Contains(guard, "==") {
 		_guard_element := del_black(guard, "==")
-		guard = _guard_element[0] + "<" + _guard_element[1]
+		guard = _guard_element[0] + "==" + _guard_element[1]
 	} else if strings.Contains(guard, ">=") {
 		_guard_element := del_black(guard, ">=")
-		guard = _guard_element[0] + "<" + _guard_element[1]
+		guard = _guard_element[0] + "==" + _guard_element[1]
 	} else if strings.Contains(guard, ">") {
 		_guard_element := del_black(guard, ">")
-		guard = _guard_element[0] + "<" + _guard_element[1]
+		guard = _guard_element[0] + "==" + _guard_element[1]
 	}
 
 	return guard
