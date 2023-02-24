@@ -460,12 +460,27 @@ func main() {
 					t.Select().BlockFunc(func(s *Group) {
 						for _, trans_val := range srt_trans[i][j] {
 							fmt.Println(trans_val)
-							s.Case(
-								Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(10).Op("-").Id("t")),
-							).Block(
-								//update 추가
-								Goto().Id(trans_val.target),
-							)
+							if trans_val.assign == "" && trans_val.selects == "" && trans_val.sync == "" { //time passsge edge
+								s.Case(make_timeafter(trans_val.guard)).Block(Goto().Id(trans_val.target))
+							} else if trans_val.selects == "" { //select가 없는 경우
+								if trans_val.guard == "" && trans_val.sync == "" { // no condition, no sync
+
+								} else if trans_val.guard == "" && trans_val.sync != "" { //only sync
+
+								} else if trans_val.guard != "" && trans_val.sync == "" { //only condition
+
+								} else if trans_val.guard != "" && trans_val.sync != "" { // condition, sync
+
+								}
+								s.Case(
+									Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(10).Op("-").Id("t")),
+								).Block(
+									//update 추가
+									Goto().Id(trans_val.target),
+								)
+							} else { //select가 있는 경우
+
+							}
 						}
 					})
 
@@ -533,14 +548,29 @@ func sort_tada_trans(loc [][]TADA_loc, trans [][]TADA_trastion) [][][]TADA_trast
 	}
 	return srt_data
 }
-func make_chan(name string, isMap bool) *Statement { //참고용
-	return Id(name).Op(":=").Do(func(s *Statement) {
-		if isMap {
-			s.Map(String()).String()
-		} else {
-			s.Index().String()
+
+//Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(10).Op("-").Id("t"))
+func make_timeafter(guard string) *Statement { //참고용
+	return Op("<-").Qual("time", "After").Do(func(s *Statement) {
+		if strings.Contains(guard, "==") {
+			s.Call(Qual("time", "Second").Op("*").Lit(find_int(guard)).Op("-").Id("t").Op("-").Id("eps"))
+		} else if strings.Contains(guard, "<") {
+			s.Call(Qual("time", "Second").Op("*").Lit(find_int(guard)).Op("-").Id("t"))
 		}
-	}).Values()
+	})
+}
+func find_int(guard string) int {
+	_rst := 0
+	if strings.Contains(guard, "==") {
+		_index := strings.Index(guard, "==")
+		_rst, _ := strconv.Atoi(guard[_index+2:])
+		return _rst
+	} else if strings.Contains(guard, "<") {
+		_index := strings.Index(guard, "<")
+		_rst, _ := strconv.Atoi(guard[_index+1:])
+		return _rst
+	}
+	return _rst
 }
 func after_treatment(tem_name []string) [][]byte {
 	input_file, err := os.Open(dec_path)

@@ -80,14 +80,14 @@ func main() {
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "Cross", "location", "x", ":", x)
 		select {
-		case <-time.After(time.Second*10 - t):
+		case <-time.After(time.Second*3 - t - eps):
 			goto id2p
 		}
 	id3:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "Appr", "location", "x", ":", x)
 		select {
-		case <-time.After(time.Second*10 - t):
+		case <-time.After(time.Second*10 - t - eps):
 			goto id3p
 		case <-time.After(time.Second*10 - t):
 			goto id1
@@ -96,7 +96,7 @@ func main() {
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "Start", "location", "x", ":", x)
 		select {
-		case <-time.After(time.Second*10 - t):
+		case <-time.After(time.Second*7 - t - eps):
 			goto id4p
 		}
 	exp:
@@ -107,7 +107,7 @@ func main() {
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "id2p", "location", "x", ":", x)
 		select {
-		case <-time.After(time.Second*10 - t):
+		case <-time.After:
 			goto id2pp
 		case <-time.After(time.Second*10 - t):
 			goto id0
@@ -116,7 +116,7 @@ func main() {
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "id2pp", "location", "x", ":", x)
 		select {
-		case <-time.After(time.Second*10 - t):
+		case <-time.After:
 			goto exp
 		case <-time.After(time.Second*10 - t):
 			goto id0
@@ -125,7 +125,7 @@ func main() {
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "id3p", "location", "x", ":", x)
 		select {
-		case <-time.After(time.Second*10 - t):
+		case <-time.After:
 			goto id3pp
 		case <-time.After(time.Second*10 - t):
 			goto id2
@@ -136,7 +136,7 @@ func main() {
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "id3pp", "location", "x", ":", x)
 		select {
-		case <-time.After(time.Second*10 - t):
+		case <-time.After:
 			goto exp
 		case <-time.After(time.Second*10 - t):
 			goto id2
@@ -145,7 +145,7 @@ func main() {
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "id4p", "location", "x", ":", x)
 		select {
-		case <-time.After(time.Second*10 - t):
+		case <-time.After:
 			goto id4pp
 		case <-time.After(time.Second*10 - t):
 			goto id2
@@ -154,7 +154,7 @@ func main() {
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "id4pp", "location", "x", ":", x)
 		select {
-		case <-time.After(time.Second*10 - t):
+		case <-time.After:
 			goto exp
 		case <-time.After(time.Second*10 - t):
 			goto id2
