@@ -403,11 +403,11 @@ func main() {
 	file.Close()
 	rst_lexer, rst_token := Lexer_TADA()
 	syntax, syntax_lex_data := parse_TADA(rst_lexer, rst_token)
-	channel_tada, clock_tada := map_token_2_c(syntax, syntax_lex_data)
+	tem_val, channel_tada, clock_tada := map_token_2_c(syntax, syntax_lex_data)
 	cgo_dec := after_treatment(tem_name)
 
 	srt_trans := sort_tada_trans(tada_loc, tada_trans)
-	fmt.Println(srt_trans)
+	fmt.Println(tem_val, srt_trans)
 
 	//코드 생성
 	f := NewFilePathName("/uppaal2go_result.go", "main")
@@ -420,11 +420,10 @@ func main() {
 		for _, val := range channel_tada {
 			g.Id(val[1] + "_chan").Op(":=").Do(func(s *Statement) {
 				if strings.Contains(val[0], "[") {
-					// _lbracket := strings.Index(val[0], "[")
-					// _rbracket := strings.Index(val[0], "]")
-					// _string := val[0][_lbracket+1 : _rbracket]
-					//_string := val[0][strings.Index(val[0], "[")+1 : strings.Index(val[0], "]")]
-					s.Make(Index().Chan().Bool(), Qual("C", "N")) //chan 용량 설정**
+					_lbracket := strings.Index(val[0], "[")
+					_rbracket := strings.Index(val[0], "]")
+					_string := val[0][_lbracket+1 : _rbracket]
+					s.Make(Index().Chan().Bool(), Lit("C."+_string)) //용량 설정 - C.N이 아닌 다른 숫자가 들어와도 가능하게끔만들어야함
 					g.For(
 						Id("i").Op(":=").Range().Id(val[1] + "_chan"),
 					).Block(
@@ -437,6 +436,25 @@ func main() {
 		}
 		for i, val := range tem_name {
 			g.Id(val).Op(":=").Func().Params(Id("id").Int()).BlockFunc(func(t *Group) { //id, int 수정 파리미터 수정
+				//local val 초기화
+				if len(tem_val[i]) != 0 {
+					t.Id("local_val").Op(":=").Qual("C", val).ValuesFunc(func(l *Group) {
+						for _, v := range tem_val[i] {
+							fmt.Println("55555", v)
+							//l.Id(v[1]).Op(":").Lit()
+							if len(v) > 2 {
+								l.Id(v[1]).Op(":").Lit(v[2])
+							} else { //0으로 초기화
+								if strings.Contains(v[0], "[") {
+									l.Id(v[1]).Op(":").Lit(0) //수정
+								} else {
+									l.Id(v[1]).Op(":").Lit(0)
+								}
+							}
+						}
+					})
+				}
+				//clock 선언
 				for clock_name_index, clock_name := range clock_tada[i+1] {
 					if clock_name_index > 0 {
 						t.Id(clock_name+"_now").Op(":=").Qual("time", "Now").Call()
@@ -444,6 +462,7 @@ func main() {
 					}
 
 				}
+
 				for j, val_loc := range tada_loc[i] {
 					t.Id(val_loc.id).Op(":")
 					for clock_name_index, clock_name := range clock_tada[i+1] {
@@ -460,27 +479,14 @@ func main() {
 					t.Select().BlockFunc(func(s *Group) {
 						for _, trans_val := range srt_trans[i][j] {
 							fmt.Println(trans_val)
-							if trans_val.assign == "" && trans_val.selects == "" && trans_val.sync == "" { //time passsge edge
-								s.Case(make_timeafter(trans_val.guard)).Block(Goto().Id(trans_val.target))
-							} else if trans_val.selects == "" { //select가 없는 경우
-								if trans_val.guard == "" && trans_val.sync == "" { // no condition, no sync
+							//여기서 가드 계산 select, guard, sync 3개 고려. no condition도
 
-								} else if trans_val.guard == "" && trans_val.sync != "" { //only sync
-
-								} else if trans_val.guard != "" && trans_val.sync == "" { //only condition
-
-								} else if trans_val.guard != "" && trans_val.sync != "" { // condition, sync
-
-								}
-								s.Case(
-									Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(10).Op("-").Id("t")),
-								).Block(
-									//update 추가
-									Goto().Id(trans_val.target),
-								)
-							} else { //select가 있는 경우
-
-							}
+							s.Case(
+								Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(10).Op("-").Id("t")),
+							).Block(
+								//update 추가
+								Goto().Id(trans_val.target),
+							)
 						}
 					})
 
@@ -548,29 +554,14 @@ func sort_tada_trans(loc [][]TADA_loc, trans [][]TADA_trastion) [][][]TADA_trast
 	}
 	return srt_data
 }
-
-//Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(10).Op("-").Id("t"))
-func make_timeafter(guard string) *Statement { //참고용
-	return Op("<-").Qual("time", "After").Do(func(s *Statement) {
-		if strings.Contains(guard, "==") {
-			s.Call(Qual("time", "Second").Op("*").Lit(find_int(guard)).Op("-").Id("t").Op("-").Id("eps"))
-		} else if strings.Contains(guard, "<") {
-			s.Call(Qual("time", "Second").Op("*").Lit(find_int(guard)).Op("-").Id("t"))
+func make_chan(name string, isMap bool) *Statement { //참고용
+	return Id(name).Op(":=").Do(func(s *Statement) {
+		if isMap {
+			s.Map(String()).String()
+		} else {
+			s.Index().String()
 		}
-	})
-}
-func find_int(guard string) int {
-	_rst := 0
-	if strings.Contains(guard, "==") {
-		_index := strings.Index(guard, "==")
-		_rst, _ := strconv.Atoi(guard[_index+2:])
-		return _rst
-	} else if strings.Contains(guard, "<") {
-		_index := strings.Index(guard, "<")
-		_rst, _ := strconv.Atoi(guard[_index+1:])
-		return _rst
-	}
-	return _rst
+	}).Values()
 }
 func after_treatment(tem_name []string) [][]byte {
 	input_file, err := os.Open(dec_path)
@@ -641,7 +632,7 @@ func contains_string(elems []string, v string) bool {
 	}
 	return false
 }
-func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][]string, [][]string) {
+func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string, [][]string, [][]string) {
 	input_file, err := os.Open(path)
 	check(err)
 	output_file, err := os.OpenFile(
@@ -830,8 +821,8 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][]string, [
 
 	}
 	//return chan, clock 추가 해야 할듯
-	//return tem_val, tem_chan, tem_clock
-	return tem_chan, tem_clock
+	return tem_val, tem_chan, tem_clock
+	//return tem_chan, tem_clock
 }
 func slice_count(s []Token, a Token) int {
 	num := 0
