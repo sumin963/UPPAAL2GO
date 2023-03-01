@@ -480,9 +480,10 @@ func main() {
 						for _, trans_val := range srt_trans[i][j] {
 							fmt.Println(trans_val)
 							//여기서 가드 계산 select, guard, sync 3개 고려. no condition도
-
+							//Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(10).Op("-").Id("t"))
 							s.Case(
-								Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(10).Op("-").Id("t")),
+								Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0)),
+								//make_trans(trans_val.selects, trans_val.guard, trans_val.sync),
 							).Block(
 								//update 추가
 								Goto().Id(trans_val.target),
@@ -554,7 +555,7 @@ func sort_tada_trans(loc [][]TADA_loc, trans [][]TADA_trastion) [][][]TADA_trast
 	}
 	return srt_data
 }
-func make_chan(name string, isMap bool) *Statement { //참고용
+func make_chan(name string, isMap bool) *Statement {
 	return Id(name).Op(":=").Do(func(s *Statement) {
 		if isMap {
 			s.Map(String()).String()
@@ -562,6 +563,26 @@ func make_chan(name string, isMap bool) *Statement { //참고용
 			s.Index().String()
 		}
 	}).Values()
+}
+func make_trans(selects string, guard string, sync string) *Statement {
+	if selects == "" {
+		if guard == "" && sync == "" {
+			return Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0))
+		} else if guard != "" && sync == "" {
+			return Op("<-").Id(sync).Do(func(s *Statement) {
+				if true { //추가
+					s.Index()
+				}
+			})
+		} else if guard == "" && sync != "" {
+
+		} else if guard != "" && sync != "" {
+
+		}
+	} else {
+
+	}
+	return Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0))
 }
 func after_treatment(tem_name []string) [][]byte {
 	input_file, err := os.Open(dec_path)
