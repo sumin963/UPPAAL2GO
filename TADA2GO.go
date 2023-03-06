@@ -564,26 +564,27 @@ func make_chan(name string, isMap bool) *Statement {
 		}
 	}).Values()
 }
-func make_trans(selects string, guard string, sync string) *Statement {
-	if selects == "" {
-		if guard == "" && sync == "" {
-			return Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0))
-		} else if guard != "" && sync == "" {
-			return Op("<-").Id(sync).Do(func(s *Statement) {
-				if true { //추가
-					s.Index()
-				}
-			})
-		} else if guard == "" && sync != "" {
 
-		} else if guard != "" && sync != "" {
+// func make_trans(selects string, guard string, sync string) *Statement {
+// 	if selects == "" {
+// 		if guard == "" && sync == "" {
+// 			return Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0))
+// 		} else if guard != "" && sync == "" {
+// 			return Op("<-").Id(sync).Do(func(s *Statement) {
+// 				if true { //추가
+// 					s.Index()
+// 				}
+// 			})
+// 		} else if guard == "" && sync != "" {
 
-		}
-	} else {
+// 		} else if guard != "" && sync != "" {
+// 			return Op("<-").Id("when").Call(guard, sync)
+// 		}
+// 	} else {
 
-	}
-	return Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0))
-}
+//		}
+//		return Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0))
+//	}
 func after_treatment(tem_name []string) [][]byte {
 	input_file, err := os.Open(dec_path)
 	check(err)
