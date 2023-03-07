@@ -482,8 +482,8 @@ func main() {
 							//여기서 가드 계산 select, guard, sync 3개 고려. no condition도
 							//Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(10).Op("-").Id("t"))
 							s.Case(
-								Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0)),
-								//make_trans(trans_val.selects, trans_val.guard, trans_val.sync),
+								//Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0)),
+								make_trans(trans_val.selects, trans_val.guard, trans_val.sync),
 							).Block(
 								//update 추가
 								Goto().Id(trans_val.target),
@@ -565,26 +565,37 @@ func make_chan(name string, isMap bool) *Statement {
 	}).Values()
 }
 
-// func make_trans(selects string, guard string, sync string) *Statement {
-// 	if selects == "" {
-// 		if guard == "" && sync == "" {
-// 			return Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0))
-// 		} else if guard != "" && sync == "" {
-// 			return Op("<-").Id(sync).Do(func(s *Statement) {
-// 				if true { //추가
-// 					s.Index()
-// 				}
-// 			})
-// 		} else if guard == "" && sync != "" {
+func make_trans(selects string, guard string, sync string) *Statement {
+	if selects == "" {
+		if guard == "" && sync == "" {
+			return Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0))
+		} else if guard != "" && sync == "" {
+		} else if guard == "" && sync != "" {
+			if strings.Contains(sync, "!") {
+				sync = strings.Trim(sync, "!")
+				sync_index(sync)
+				//return Op("<-").Id(sync)
+			} else if strings.Contains(sync, "?") {
+				sync = strings.Trim(sync, "?")
+				//return Id(sync).Op("<-").Lit(true)
+			}
+		} else if guard != "" && sync != "" {
+			//return Op("<-").Id("when").Call(guard, sync)
+		}
+	} else {
 
-// 		} else if guard != "" && sync != "" {
-// 			return Op("<-").Id("when").Call(guard, sync)
-// 		}
-// 	} else {
+	}
+	return Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0))
+}
+func sync_index(sync string) {
+	index_lbracket := strings.Index(sync, "[")
+	index_rbracket := strings.Index(sync, "]")
 
-//		}
-//		return Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0))
-//	}
+	rst := sync[:index_lbracket]
+	num := sync[index_lbracket+1 : index_rbracket]
+	fmt.Println("aaaaaa", rst, num)
+	//return Id(rst).Index(num)
+}
 func after_treatment(tem_name []string) [][]byte {
 	input_file, err := os.Open(dec_path)
 	check(err)
