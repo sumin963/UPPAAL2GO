@@ -461,11 +461,10 @@ func main() {
 	file.Close()
 	rst_lexer, rst_token := Lexer_TADA()
 	syntax, syntax_lex_data := parse_TADA(rst_lexer, rst_token)
-	tem_val, channel_tada, clock_tada := map_token_2_c(syntax, syntax_lex_data)
+	tem_val, channel_tada, clock_tada, param_tada, sys_tada := map_token_2_c(syntax, syntax_lex_data)
 	cgo_dec := after_treatment(tem_name)
 	srt_trans := sort_tada_trans(tada_loc, tada_trans)
-	fmt.Println(tem_val, srt_trans)
-	fmt.Println("dd", syntax, syntax_lex_data)
+	fmt.Println("dd", param_tada, sys_tada)
 	//코드 생성
 	f := NewFilePathName("/uppaal2go_result.go", "main")
 	for _, val := range cgo_dec {
@@ -491,7 +490,7 @@ func main() {
 				}
 			})
 		}
-		for i, val := range tem_name {
+		for i, val := range tem_name { //template 선언
 			g.Id(val).Op(":=").Func().Params(Id("id").Int()).BlockFunc(func(t *Group) { //id, int 수정 파리미터 수정
 				//local val 초기화
 				if len(tem_val[i]) != 0 {
@@ -519,7 +518,6 @@ func main() {
 					}
 
 				}
-
 				for j, val_loc := range tada_loc[i] {
 					t.Id(val_loc.id).Op(":")
 					for clock_name_index, clock_name := range clock_tada[i+1] {
@@ -551,6 +549,11 @@ func main() {
 				}
 			})
 		}
+		for _, val := range sys_tada {
+			g.Go().Id(val).Call()
+
+		}
+		g.Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(20))
 	})
 	f.Func().Id("when").Params(Id("guard").Bool(), Id("channel").Chan().Bool()).Chan().Bool().BlockFunc(func(g *Group) {
 		g.If(
@@ -722,7 +725,7 @@ func contains_string(elems []string, v string) bool {
 	}
 	return false
 }
-func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string, [][]string, [][]string) {
+func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string, [][]string, [][]string, [][]string, []string) {
 	input_file, err := os.Open(path)
 	check(err)
 	output_file, err := os.OpenFile(
@@ -736,6 +739,9 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 	tem_val := make([][][]string, 0)
 	tem_chan := make([][]string, 0)
 	tem_clock := make([][]string, 0)
+	tem_param := make([][]string, 0)
+	sys_dec := make([]string, 0)
+
 	for {
 		line, _, err := reader.ReadLine()
 		input_file_reader = append(input_file_reader, line)
@@ -810,6 +816,8 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 		} else if contains(_parse, DIV) && contains(_parse, PARAM) {
 			_param = true
 			_local = false
+			tem_param = append(tem_param, make([]string, 0))
+
 		} else if contains(_parse, DIV) && contains(_parse, SYSTEM) {
 			_system = true
 			_param = false
@@ -821,10 +829,20 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 			check(err)
 			_local = true
 		} else if _param {
+			for j, _ident := range _parse {
+				if _ident != PREFIX || _ident != COMMA {
+					tem_param[len(tem_param)-1] = append(tem_param[len(tem_param)-1], parse_lexr_data[i][j][2]) // type value
+				}
+			}
+
 		} else if _system {
 			if contains(_parse, SYSTEM) {
-				_num := slice_count(_parse, COMMA)
-				fmt.Println("2222222222222222222", _num)
+
+				for j, _ident := range _parse {
+					if _ident == IDENT {
+						sys_dec = append(sys_dec, parse_lexr_data[i][j][2])
+					}
+				}
 			}
 		} else { //dec
 			//chan ,clock
@@ -925,7 +943,7 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 
 	}
 	//return chan, clock 추가 해야 할듯
-	return tem_val, tem_chan, tem_clock
+	return tem_val, tem_chan, tem_clock, tem_param, sys_dec
 	//return tem_chan, tem_clock
 }
 func slice_count(s []Token, a Token) int {
@@ -1062,6 +1080,7 @@ func parse_TADA(lexer_data [][]string, token []Token) ([][]Token, [][][]string) 
 			stack_lex = append(stack_lex, lexer_data[i])
 			if len(stack_token) >= 3 { //ident _ ident 처리
 				if stack_token[len(stack_token)-2] == UNDERBAR && stack_token[len(stack_token)-3] == IDENT {
+					stack_lex[len(stack_token)-3][2] = stack_lex[len(stack_token)-3][2] + stack_lex[len(stack_token)-2][2] + stack_lex[len(stack_token)-1][2]
 					stack_token = stack_token[:len(stack_token)-2]
 					stack_lex = stack_lex[:len(stack_lex)-2]
 				}

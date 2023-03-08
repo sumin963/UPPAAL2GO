@@ -182,6 +182,9 @@ func main() {
 			goto id6
 		}
 	}
+	go Train()
+	go Gate()
+	<-time.After(time.Second * 20)
 }
 func when(guard bool, channel chan bool) chan bool {
 	if !guard {
