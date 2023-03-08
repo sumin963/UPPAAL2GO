@@ -67,6 +67,8 @@ const (
 	TYPEDEF
 	TYPEID
 	RETURN
+	SYSTEM
+	PARAM
 )
 
 var tokens = []string{
@@ -101,6 +103,8 @@ var tokens = []string{
 	TYPEDEF: "TYPEDEF",
 	TYPEID:  "TYPEID",
 	RETURN:  "RETURN",
+	SYSTEM:  "SYSTEM",
+	PARAM:   "PARAM",
 }
 
 func (t Token) String() string {
@@ -191,6 +195,10 @@ func (l *Lexer) Lex() (Position, Token, string) {
 				switch lit {
 				case "return":
 					return startPos, RETURN, lit
+				case "param":
+					return startPos, PARAM, lit
+				case "system":
+					return startPos, SYSTEM, lit
 				case "typedef":
 					return startPos, TYPEDEF, lit
 				case "chan":
@@ -291,6 +299,29 @@ func Lexer_TADA() ([][]string, []Token) {
 	if err != nil {
 		panic(err)
 	}
+	lexer := NewLexer(file)
+
+	for {
+		pos, tok, lit := lexer.Lex()
+		if tok == EOF {
+			break
+		}
+		_lexer_data := make([]string, 0)
+		_lexer_data = append(_lexer_data, strconv.Itoa(pos.line), strconv.Itoa(pos.column), lit)
+		lexer_data = append(lexer_data, _lexer_data)
+		lexer_token_data = append(lexer_token_data, tok)
+		//fmt.Printf("%d:%d\t%s\t%s\n", pos.line, pos.column, tok, lit)
+	}
+	return lexer_data, lexer_token_data
+}
+
+func Lexer_param(param []string, dec string) ([][]string, []Token) {
+	file, err := os.Open(path)
+	lexer_data := make([][]string, 0)
+	lexer_token_data := make([]Token, 0)
+	if err != nil {
+		panic(err)
+	}
 
 	lexer := NewLexer(file)
 	for {
@@ -317,6 +348,8 @@ func main() {
 	var dec string
 	var tem_dec []string
 	var tem_name []string
+	var tem_param []string
+	var sys_dec string
 	for _, e := range doc.FindElements("./nta/*") {
 		if e.Tag == "declaration" {
 			dec = e.Text()
@@ -327,10 +360,15 @@ func main() {
 
 			if name := e.SelectElement("name"); name != nil {
 				tem_name = append(tem_name, name.Text())
+				tem_param = append(tem_param, "")
+
+			}
+			if param := e.SelectElement("parameter"); param != nil {
+
+				tem_param[len(tem_param)-1] = param.Text()
 			}
 			if declaration := e.SelectElement("declaration"); declaration != nil {
 				tem_dec = append(tem_dec, declaration.Text())
-
 			}
 			for _, l := range e.FindElements("location") {
 				var _id string
@@ -374,14 +412,20 @@ func main() {
 			}
 			tada_trans = append(tada_trans, _tada_trans)
 		}
+		if e.Tag == "system" {
+			sys_dec = e.Text()
+
+		}
 		//fmt.Println("\n")
 	}
 	//fmt.Println(dec)
 	//fmt.Println(tem_dec)
 	dec_string_comment_del := string_comment_del(dec) // /**/ 제거
 	tem_dec_string_comment_del := tem_string_comment_del(tem_dec)
+	sys_dec_string_comment_del := string_comment_del(sys_dec)
 	dec_comment_del := dec_line_comment_del(dec_string_comment_del) // //제거
 	tem_dec_comment_del := tem_line_comment_del(tem_dec_string_comment_del)
+	sys_dec_comment_del := dec_line_comment_del(sys_dec_string_comment_del)
 	//
 	file, err := os.OpenFile(
 		path,
@@ -400,15 +444,28 @@ func main() {
 			check(err)
 		}
 	}
+	for i, val := range tem_param {
+		_, err := file.Write([]byte("//" + "param_" + tem_name[i] + ";" + "\n"))
+		check(err)
+		_, err = file.Write([]byte(val + ";" + "\n"))
+		check(err)
+	}
+	_, err = file.Write([]byte("//" + "system_dec;" + "\n"))
+	check(err)
+	for i, _ := range sys_dec_comment_del {
+
+		_, err = file.Write([]byte(sys_dec_comment_del[i] + "\n"))
+		check(err)
+	}
+
 	file.Close()
 	rst_lexer, rst_token := Lexer_TADA()
 	syntax, syntax_lex_data := parse_TADA(rst_lexer, rst_token)
 	tem_val, channel_tada, clock_tada := map_token_2_c(syntax, syntax_lex_data)
 	cgo_dec := after_treatment(tem_name)
-
 	srt_trans := sort_tada_trans(tada_loc, tada_trans)
 	fmt.Println(tem_val, srt_trans)
-
+	fmt.Println("dd", syntax, syntax_lex_data)
 	//코드 생성
 	f := NewFilePathName("/uppaal2go_result.go", "main")
 	for _, val := range cgo_dec {
@@ -691,6 +748,8 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 	defer output_file.Close()
 	//fmt.Println(parse, "\n", parse_lexr_data, len(parse), len(parse_lexr_data))
 	_local := false
+	_param := false
+	_system := false
 	for i, _parse := range parse {
 		//fmt.Println(i, _parse)
 		if _local && contains(_parse, ASSIGN) { //여기서 부터 시작;;;;;;;;;;;;;;;
@@ -748,6 +807,12 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 		} else if contains(_parse, IDENT) && contains(_parse, RPARENTHESIS) && contains(_parse, RBRACE) { //func 수정필요
 			//파라미터에 Local *local
 			//local->list 구조체 멤버 접근시
+		} else if contains(_parse, DIV) && contains(_parse, PARAM) {
+			_param = true
+			_local = false
+		} else if contains(_parse, DIV) && contains(_parse, SYSTEM) {
+			_system = true
+			_param = false
 		} else if contains(_parse, DIV) { //바꾸어야 할지도\
 			tem_name = append(tem_name, parse_lexr_data[i][2][2])
 			tem_val = append(tem_val, make([][]string, 0)) //중요
@@ -755,6 +820,12 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 			_, err := output_file.Write([]byte("typedef struct " + parse_lexr_data[i][2][2] + "{\n"))
 			check(err)
 			_local = true
+		} else if _param {
+		} else if _system {
+			if contains(_parse, SYSTEM) {
+				_num := slice_count(_parse, COMMA)
+				fmt.Println("2222222222222222222", _num)
+			}
 		} else { //dec
 			//chan ,clock
 			//int[0,6]
@@ -1009,6 +1080,9 @@ func string_comment_del(dec string) string {
 		end := strings.Index(dec, "*/")
 		dec_comment_del += dec[0:start] + dec[end+2:len(dec)]
 		i++
+	}
+	if string_counts == 0 {
+		return dec
 	}
 	return dec_comment_del
 }

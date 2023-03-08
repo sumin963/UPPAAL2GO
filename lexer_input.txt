@@ -42,3 +42,10 @@ id_t tail()
 {
    return list[len - 1];
 }
+//param_Train;
+const id_t id;
+//param_Gate;
+;
+//system_dec;
+system Train, Gate;
+
