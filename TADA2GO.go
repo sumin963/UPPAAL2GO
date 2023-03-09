@@ -598,7 +598,7 @@ func main() {
 //	 chan 선언시 chan 용량 C.n
 //		system dec, params 값 가져와서 lexer로 돌리고 간단하게 parsing 진행
 //		template 내용 etree를 통해 가져오기
-func make_param(param []string) *Statement {
+func make_param(param []string) {
 
 	fmt.Println("33333", param)
 	for i, val := range param {
