@@ -491,6 +491,7 @@ func main() {
 			})
 		}
 		for i, val := range tem_name { //template 선언
+			//make_param(param_tada[i])
 			g.Id(val).Op(":=").Func().Params(Id("id").Int()).BlockFunc(func(t *Group) { //id, int 수정 파리미터 수정
 				//local val 초기화
 				if len(tem_val[i]) != 0 {
@@ -597,6 +598,22 @@ func main() {
 //	 chan 선언시 chan 용량 C.n
 //		system dec, params 값 가져와서 lexer로 돌리고 간단하게 parsing 진행
 //		template 내용 etree를 통해 가져오기
+func make_param(param []string) *Statement {
+
+	fmt.Println("33333", param)
+	for i, val := range param {
+		if i == 0 || i%2 == 0 {
+			if val == "int" || val == "string" || val == "float" {
+
+			} else {
+
+			}
+		} else {
+
+		}
+
+	}
+}
 func sort_tada_trans(loc [][]TADA_loc, trans [][]TADA_trastion) [][][]TADA_trastion {
 	srt_data := make([][][]TADA_trastion, 0)
 	for i, tem := range loc {
@@ -830,7 +847,7 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 			_local = true
 		} else if _param {
 			for j, _ident := range _parse {
-				if _ident != PREFIX || _ident != COMMA {
+				if _ident != PREFIX && _ident != COMMA {
 					tem_param[len(tem_param)-1] = append(tem_param[len(tem_param)-1], parse_lexr_data[i][j][2]) // type value
 				}
 			}
