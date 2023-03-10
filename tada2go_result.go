@@ -344,6 +344,12 @@ func when(guard bool, channel chan bool) chan bool {
 	}
 	return channel
 }
+func when_guard(guard bool) <-chan time.Time {
+	if !guard {
+		return nil
+	}
+	return time.After(time.Second)
+}
 func time_passage(time_passage []string, ctime time.Duration) int {
 	for i, val := range time_passage { // 비교하는거 추가
 		if strings.Contains(val, "==") {

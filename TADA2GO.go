@@ -614,55 +614,6 @@ func main() {
 //	 chan 선언시 chan 용량 C.n
 //		system dec, params 값 가져와서 lexer로 돌리고 간단하게 parsing 진행
 //		template 내용 etree를 통해 가져오기
-
-func make_param(param []string) *Statement {
-	var id_type string
-	return ValuesFunc(func(g *Group) {
-		for i, val := range param {
-			if i == 0 || i%2 == 0 {
-				id_type = val
-			} else {
-				if id_type == "int" {
-					g.Id(val).Int()
-				} else if id_type == "string" {
-					g.Id(val).String()
-				} else if id_type == "float" {
-					g.Id(val).Float64()
-				} else {
-					g.Id(val).Qual("C", val)
-				}
-			}
-		}
-	})
-}
-func sort_tada_trans(loc [][]TADA_loc, trans [][]TADA_trastion) [][][]TADA_trastion {
-	srt_data := make([][][]TADA_trastion, 0)
-	for i, tem := range loc {
-		_srt_data := make([][]TADA_trastion, 0)
-		for _, val := range tem {
-			_trnas := make([]TADA_trastion, 0)
-			for _, trans_q := range trans[i] {
-				if trans_q.source == val.id {
-					_trnas = append(_trnas, trans_q)
-				}
-			}
-			_srt_data = append(_srt_data, _trnas)
-
-		}
-		srt_data = append(srt_data, _srt_data)
-	}
-	return srt_data
-}
-func make_chan(name string, isMap bool) *Statement {
-	return Id(name).Op(":=").Do(func(s *Statement) {
-		if isMap {
-			s.Map(String()).String()
-		} else {
-			s.Index().String()
-		}
-	}).Values()
-}
-
 func make_trans(selects string, guard string, sync string) *Statement {
 	if selects == "" {
 		if guard == "" && sync == "" {
@@ -684,6 +635,33 @@ func make_trans(selects string, guard string, sync string) *Statement {
 
 	}
 	return Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0))
+}
+
+func sort_tada_trans(loc [][]TADA_loc, trans [][]TADA_trastion) [][][]TADA_trastion {
+	srt_data := make([][][]TADA_trastion, 0)
+	for i, tem := range loc {
+		_srt_data := make([][]TADA_trastion, 0)
+		for _, val := range tem {
+			_trnas := make([]TADA_trastion, 0)
+			for _, trans_q := range trans[i] {
+				if trans_q.source == val.id {
+					_trnas = append(_trnas, trans_q)
+				}
+			}
+			_srt_data = append(_srt_data, _trnas)
+		}
+		srt_data = append(srt_data, _srt_data)
+	}
+	return srt_data
+}
+func make_chan(name string, isMap bool) *Statement {
+	return Id(name).Op(":=").Do(func(s *Statement) {
+		if isMap {
+			s.Map(String()).String()
+		} else {
+			s.Index().String()
+		}
+	}).Values()
 }
 func sync_index(sync string) {
 	index_lbracket := strings.Index(sync, "[")
