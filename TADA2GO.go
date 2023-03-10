@@ -490,9 +490,25 @@ func main() {
 				}
 			})
 		}
-		for i, val := range tem_name { //template 선언
-			//make_param(param_tada[i])
-			g.Id(val).Op(":=").Func().Params(Id("id").Int()).BlockFunc(func(t *Group) { //id, int 수정 파리미터 수정
+		for i, val := range tem_name { //template 선언 Id("id").Int()
+			var id_type string
+			g.Id(val).Op(":=").Func().CallFunc(func(p *Group) { // 파라미터가 여러개일때 처리
+				for i, val := range param_tada[i] {
+					if i == 0 || i%2 == 0 {
+						id_type = val
+					} else {
+						if id_type == "int" {
+							p.Id(val).Int()
+						} else if id_type == "string" {
+							p.Id(val).String()
+						} else if id_type == "float" {
+							p.Id(val).Float64()
+						} else {
+							p.Id(val).Qual("C", id_type)
+						}
+					}
+				}
+			}).BlockFunc(func(t *Group) {
 				//local val 초기화
 				if len(tem_val[i]) != 0 {
 					t.Id("local_val").Op(":=").Qual("C", val).ValuesFunc(func(l *Group) {
@@ -598,21 +614,26 @@ func main() {
 //	 chan 선언시 chan 용량 C.n
 //		system dec, params 값 가져와서 lexer로 돌리고 간단하게 parsing 진행
 //		template 내용 etree를 통해 가져오기
-func make_param(param []string) {
 
-	fmt.Println("33333", param)
-	for i, val := range param {
-		if i == 0 || i%2 == 0 {
-			if val == "int" || val == "string" || val == "float" {
-
+func make_param(param []string) *Statement {
+	var id_type string
+	return ValuesFunc(func(g *Group) {
+		for i, val := range param {
+			if i == 0 || i%2 == 0 {
+				id_type = val
 			} else {
-
+				if id_type == "int" {
+					g.Id(val).Int()
+				} else if id_type == "string" {
+					g.Id(val).String()
+				} else if id_type == "float" {
+					g.Id(val).Float64()
+				} else {
+					g.Id(val).Qual("C", val)
+				}
 			}
-		} else {
-
 		}
-
-	}
+	})
 }
 func sort_tada_trans(loc [][]TADA_loc, trans [][]TADA_trastion) [][][]TADA_trastion {
 	srt_data := make([][][]TADA_trastion, 0)

@@ -55,7 +55,7 @@ func main() {
 		Go[i] = make(chan bool)
 	}
 
-	train := func(id int) {
+	train := func(id C.id_t) {
 		//local_val := C.Train{}
 		var appr_passage []string
 		var Go_passage []string

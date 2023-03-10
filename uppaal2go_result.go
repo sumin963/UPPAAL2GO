@@ -59,7 +59,7 @@ func main() {
 	for i := range go_chan {
 		go_chan[i] = make(chan bool)
 	}
-	Train := func(id int) {
+	Train := func(id C.id_t) {
 		x_now := time.Now()
 		x := time.Since(x_now)
 	id0:
@@ -160,7 +160,7 @@ func main() {
 			goto id2
 		}
 	}
-	Gate := func(id int) {
+	Gate := func() {
 		local_val := C.Gate{list: 0, len: 0}
 	id5:
 		select {
