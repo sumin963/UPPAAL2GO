@@ -580,6 +580,14 @@ func main() {
 		)
 		g.Return(Id("channel"))
 	})
+	f.Func().Id("when_guard").Params(Id("guard").Bool()).Op("<-").Chan().Qual("time", "time").BlockFunc(func(g *Group) {
+		g.If(
+			Op("!").Id("guard"),
+		).Block(
+			Return(Nil()),
+		)
+		g.Return(Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0)))
+	})
 	f.Func().Id("time_passage").Params(Id("time_passage").Index().String(), Id("ctime").Qual("time", "Duration")).Int().BlockFunc(func(g *Group) {
 		g.For(
 			List(Id("i"), Id("val")).Op(":=").Range().Id("time_passage"),
@@ -612,21 +620,20 @@ func main() {
 }
 
 //	 chan 선언시 chan 용량 C.n
-//		system dec, params 값 가져와서 lexer로 돌리고 간단하게 parsing 진행
-//		template 내용 etree를 통해 가져오기
+//		channel 사용시 + "_chan" 필요 go 채널의 경우 go routine과 겹침
 func make_trans(selects string, guard string, sync string) *Statement {
 	if selects == "" {
 		if guard == "" && sync == "" {
 			return Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0))
 		} else if guard != "" && sync == "" {
+			return Op("<-").Id("when_guard").Call(Lit(guard))
 		} else if guard == "" && sync != "" {
 			if strings.Contains(sync, "!") {
 				sync = strings.Trim(sync, "!")
-				sync_index(sync)
-				//return Op("<-").Id(sync)
+				return sync_index(sync, "!")
 			} else if strings.Contains(sync, "?") {
 				sync = strings.Trim(sync, "?")
-				//return Id(sync).Op("<-").Lit(true)
+				return sync_index(sync, "?")
 			}
 		} else if guard != "" && sync != "" {
 			//return Op("<-").Id("when").Call(guard, sync)
@@ -634,9 +641,31 @@ func make_trans(selects string, guard string, sync string) *Statement {
 	} else {
 
 	}
-	return Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0))
+	return Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(40))
 }
+func sync_index(sync string, op string) *Statement {
+	if strings.Contains(sync, "[") {
+		index_lbracket := strings.Index(sync, "[")
+		index_rbracket := strings.Index(sync, "]")
 
+		rst := sync[:index_lbracket]
+		num := sync[index_lbracket+1 : index_rbracket]
+		rst = strings.Trim(rst, " ")
+		num = strings.Trim(num, " ")
+		fmt.Println("3333333", rst, num)
+		if op == "?" {
+			return Op("<-").Id(rst + "_chan").Index(Id(num))
+		} else {
+			return Id(rst + "_chan").Index(Id(num)).Op("<-").Lit(true)
+		}
+	} else {
+		if op == "?" {
+			return Op("<-").Id(sync + "_chan")
+		} else {
+			return Id(sync + "_chan").Op("<-").Lit(true)
+		}
+	}
+}
 func sort_tada_trans(loc [][]TADA_loc, trans [][]TADA_trastion) [][][]TADA_trastion {
 	srt_data := make([][][]TADA_trastion, 0)
 	for i, tem := range loc {
@@ -663,15 +692,7 @@ func make_chan(name string, isMap bool) *Statement {
 		}
 	}).Values()
 }
-func sync_index(sync string) {
-	index_lbracket := strings.Index(sync, "[")
-	index_rbracket := strings.Index(sync, "]")
 
-	rst := sync[:index_lbracket]
-	num := sync[index_lbracket+1 : index_rbracket]
-	fmt.Println("aaaaaa", rst, num)
-	//return Id(rst).Index(num)
-}
 func after_treatment(tem_name []string) [][]byte {
 	input_file, err := os.Open(dec_path)
 	check(err)

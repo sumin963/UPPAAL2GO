@@ -348,7 +348,7 @@ func when_guard(guard bool) <-chan time.Time {
 	if !guard {
 		return nil
 	}
-	return time.After(time.Second)
+	return time.After(time.Second * 0)
 }
 func time_passage(time_passage []string, ctime time.Duration) int {
 	for i, val := range time_passage { // 비교하는거 추가
