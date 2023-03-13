@@ -553,13 +553,15 @@ func main() {
 							fmt.Println(trans_val)
 							//여기서 가드 계산 select, guard, sync 3개 고려. no condition도
 							//Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(10).Op("-").Id("t"))
-							s.Case(
-								//Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0)),
-								make_trans(trans_val.selects, trans_val.guard, trans_val.sync),
-							).Block(
-								//update 추가
-								Goto().Id(trans_val.target),
-							)
+							transition_case := make_trans(trans_val.selects, trans_val.guard, trans_val.sync)
+							for _, t_case := range transition_case {
+								s.Case(
+									t_case,
+								).Block(
+									//update 추가
+									Goto().Id(trans_val.target),
+								)
+							}
 						}
 					})
 
@@ -621,27 +623,68 @@ func main() {
 
 //	 chan 선언시 chan 용량 C.n
 //		channel 사용시 + "_chan" 필요 go 채널의 경우 go routine과 겹침
-func make_trans(selects string, guard string, sync string) *Statement {
+//  	transtion
+//		update
+
+func make_trans(selects string, guard string, sync string) []*Statement {
+	var rst []*Statement
 	if selects == "" {
 		if guard == "" && sync == "" {
-			return Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0))
+			rst = append(rst, Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(0)))
+			return rst
 		} else if guard != "" && sync == "" {
-			return Op("<-").Id("when_guard").Call(Lit(guard))
+			rst = append(rst, Op("<-").Id("when_guard").Call(Lit(guard)))
+			return rst
 		} else if guard == "" && sync != "" {
 			if strings.Contains(sync, "!") {
 				sync = strings.Trim(sync, "!")
-				return sync_index(sync, "!")
+				rst = append(rst, sync_index(sync, "!"))
+				return rst
 			} else if strings.Contains(sync, "?") {
 				sync = strings.Trim(sync, "?")
-				return sync_index(sync, "?")
+				sync = strings.Trim(sync, "?")
+				rst = append(rst, sync_index(sync, "?"))
+				return rst
 			}
 		} else if guard != "" && sync != "" {
-			//return Op("<-").Id("when").Call(guard, sync)
+			if strings.Contains(sync, "!") {
+				sync = strings.Trim(sync, "!")
+				rst = append(rst, when_sync(sync, guard, "!"))
+				return rst
+			} else if strings.Contains(sync, "?") {
+				sync = strings.Trim(sync, "?")
+				rst = append(rst, when_sync(sync, guard, "?"))
+				return rst
+			}
 		}
-	} else {
+	} else { //select
 
 	}
-	return Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(40))
+	rst = append(rst, Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(40)))
+	return rst
+}
+func when_sync(sync string, guard string, op string) *Statement {
+	if strings.Contains(sync, "[") {
+		index_lbracket := strings.Index(sync, "[")
+		index_rbracket := strings.Index(sync, "]")
+
+		rst := sync[:index_lbracket]
+		num := sync[index_lbracket+1 : index_rbracket]
+		rst = strings.Trim(rst, " ")
+		num = strings.Trim(num, " ") // num확인 필요
+		if op == "?" {
+			return Op("<-").Id("when").Call(Lit(guard), Id(rst+"_chan").Index(Id(num)))
+		} else {
+			return Id("when").Call(Lit(guard), Id(rst+"_chan").Index(Id(num))).Op("<-").Lit(true)
+		}
+	} else {
+		if op == "?" {
+			return Op("<-").Id("when").Call(Lit(guard), Id(sync+"_chan"))
+
+		} else {
+			return Id("when").Call(Lit(guard), Id(sync+"_chan")).Op("<-").Lit(true)
+		}
+	}
 }
 func sync_index(sync string, op string) *Statement {
 	if strings.Contains(sync, "[") {
@@ -651,8 +694,7 @@ func sync_index(sync string, op string) *Statement {
 		rst := sync[:index_lbracket]
 		num := sync[index_lbracket+1 : index_rbracket]
 		rst = strings.Trim(rst, " ")
-		num = strings.Trim(num, " ")
-		fmt.Println("3333333", rst, num)
+		num = strings.Trim(num, " ") //num 확인 필요
 		if op == "?" {
 			return Op("<-").Id(rst + "_chan").Index(Id(num))
 		} else {
