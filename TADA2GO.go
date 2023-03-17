@@ -551,8 +551,7 @@ func main() {
 					t.Select().BlockFunc(func(s *Group) {
 						for _, trans_val := range srt_trans[i][j] {
 							fmt.Println(trans_val)
-							//여기서 가드 계산 select, guard, sync 3개 고려. no condition도
-							//Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(10).Op("-").Id("t"))
+
 							transition_case := make_trans(trans_val.selects, trans_val.guard, trans_val.sync)
 							for _, t_case := range transition_case {
 								s.Case(

@@ -28,6 +28,7 @@ type tada_transition struct {
 	action  string
 	update  string
 	_select string
+	guard   string
 }
 
 func main() {
@@ -201,6 +202,7 @@ func main() {
 						_action := ""
 						_update := ""
 						_target := ""
+						_guard := ""
 						if t_target := edge.SelectElement("target"); t_target != nil {
 							_target = t_target.Attr[0].Value
 						}
@@ -212,14 +214,20 @@ func main() {
 								_action = l.Text()
 							} else if l.Attr[0].Value == "assignment" {
 								_update = l.Text()
+							} else if l.Attr[0].Value == "guard" {
+								if check_clock_in_guard(clock, l.Text(), tem_num) {
+									_guard = l.Text()
+								}
+
 							}
 						}
 
 						if ispossible(val, edge, clock, tem_num) {
-							_edge_element := tada_transition{val.source, _target, _action, _update, _select}
+							_edge_element := tada_transition{val.source, _target, _action, _update, _select, _guard}
 							tada_flow_edge = append(tada_flow_edge, _edge_element)
 						}
 					}
+
 					for _, edge := range Edge_double_prime {
 						_select := ""
 						_action := ""
@@ -236,9 +244,14 @@ func main() {
 								_action = l.Text()
 							} else if l.Attr[0].Value == "assignment" {
 								_update = l.Text()
+							} else if l.Attr[0].Value == "guard" {
+								if check_clock_in_guard(clock, l.Text(), tem_num) {
+									_guard = l.Text()
+								}
+
 							}
 						}
-						_edge_element := tada_transition{val.source, _target, _action, _update, _select}
+						_edge_element := tada_transition{val.source, _target, _action, _update, _select, _guard}
 						tada_flow_edge = append(tada_flow_edge, _edge_element)
 					}
 
@@ -264,9 +277,14 @@ func main() {
 								_action = l.Text()
 							} else if l.Attr[0].Value == "assignment" {
 								_update = l.Text()
+							} else if l.Attr[0].Value == "guard" {
+								if check_clock_in_guard(clock, l.Text(), tem_num) {
+									_guard = l.Text()
+								}
+
 							}
 						}
-						_edge_element := tada_transition{_source, _target, _action, _update, _select}
+						_edge_element := tada_transition{_source, _target, _action, _update, _select, _guard}
 						tada_flow_edge = append(tada_flow_edge, _edge_element)
 					}
 				}
@@ -303,6 +321,13 @@ func main() {
 					_tran_source.CreateAttr("ref", val.source)
 					_tran_target := _tran.CreateElement("target")
 					_tran_target.CreateAttr("ref", val.target)
+					if val.guard != "" {
+						_tran_label := _tran.CreateElement("label")
+						_tran_label.CreateAttr("kind", "guard")
+						_tran_label.CreateAttr("x", "0")
+						_tran_label.CreateAttr("y", "0")
+						_tran_label.CreateText(val.guard)
+					}
 					if val.action != "" {
 						_tran_label := _tran.CreateElement("label")
 						_tran_label.CreateAttr("kind", "synchronisation")
@@ -372,7 +397,29 @@ func ispossible(val transition_e_prime, edge *etree.Element, clock [][]string, t
 	}
 	return result
 }
+func check_clock_in_guard(clock [][]string, _guard string, tem_num int) bool {
+	_guard_element := make([]string, 0)
+	if strings.Contains(_guard, "<=") {
+		_guard_element = del_black(_guard, "<=")
+	} else if strings.Contains(_guard, "<") {
+		_guard_element = del_black(_guard, "<")
+	} else if strings.Contains(_guard, "==") {
+		_guard_element = del_black(_guard, "==")
+	} else if strings.Contains(_guard, ">=") {
+		_guard_element = del_black(_guard, ">=")
+	} else if strings.Contains(_guard, ">") {
+		_guard_element = del_black(_guard, ">")
+	}
 
+	for i := 0; i < len(_guard_element); i++ {
+		for j := 0; j < len(clock[tem_num]); j++ {
+			if _guard_element[i] == clock[tem_num][j] {
+				return false
+			}
+		}
+	}
+	return true
+}
 func get_form(guard string) string {
 	result := ""
 
