@@ -176,7 +176,7 @@ func main() {
 		}
 	id7:
 		select {
-		case go_chan[front()] <- true:
+		case when("len > 0", go_chan[front()]) <- true:
 			goto id6
 		case <-time.After(time.Second * 40):
 			goto id6

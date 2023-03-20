@@ -199,6 +199,7 @@ id_t tail()
     <transition>
       <source ref="id6"/>
       <target ref="id7"/>
+      <label kind="guard" x="0" y="0">e == front()</label>
       <label kind="synchronisation" x="0" y="0">leave[e]?</label>
       <label kind="assignment" x="0" y="0">dequeue()</label>
       <label kind="select" x="0" y="0">e : id_t</label>
@@ -206,11 +207,13 @@ id_t tail()
     <transition>
       <source ref="id7"/>
       <target ref="id6"/>
+      <label kind="guard" x="0" y="0">len &gt; 0</label>
       <label kind="synchronisation" x="0" y="0">go[front()]!</label>
     </transition>
     <transition>
       <source ref="id7"/>
       <target ref="id6"/>
+      <label kind="guard" x="0" y="0">len == 0</label>
       <label kind="synchronisation" x="0" y="0">appr[e]?</label>
       <label kind="assignment" x="0" y="0">enqueue(e)</label>
       <label kind="select" x="0" y="0">e : id_t</label>

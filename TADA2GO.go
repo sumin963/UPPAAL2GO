@@ -657,10 +657,19 @@ func make_trans(selects string, guard string, sync string) []*Statement {
 			}
 		}
 	} else { //select
+		select_preprocessing(selects)
 
 	}
 	rst = append(rst, Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(40)))
 	return rst
+}
+func select_preprocessing(_select string) (string, string) {
+	index := strings.Index(_select, ":")
+	_value := _select[:index]
+	_type := _select[index+1:]
+	_value = strings.Trim(_value, " ")
+	_type = strings.Trim(_type, " ")
+	return _value, _type
 }
 func when_sync(sync string, guard string, op string) *Statement {
 	if strings.Contains(sync, "[") {
