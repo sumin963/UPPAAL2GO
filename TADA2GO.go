@@ -464,6 +464,7 @@ func main() {
 	tem_val, channel_tada, clock_tada, param_tada, sys_tada := map_token_2_c(syntax, syntax_lex_data)
 	cgo_dec := after_treatment(tem_name)
 	srt_trans := sort_tada_trans(tada_loc, tada_trans)
+	make_srt_trans := sort_make_tada_trans(tada_loc, tada_trans)
 	fmt.Println("dd", param_tada, sys_tada)
 	//코드 생성
 	f := NewFilePathName("/uppaal2go_result.go", "main")
@@ -492,6 +493,8 @@ func main() {
 		}
 		for i, val := range tem_name { //template 선언 Id("id").Int()
 			var id_type string
+			var param_id []string
+			var clock_id []string
 			g.Id(val).Op(":=").Func().CallFunc(func(p *Group) { // 파라미터가 여러개일때 처리
 				for i, val := range param_tada[i] {
 					if i == 0 || i%2 == 0 {
@@ -499,12 +502,16 @@ func main() {
 					} else {
 						if id_type == "int" {
 							p.Id(val).Int()
+							param_id = append(param_id, val)
 						} else if id_type == "string" {
 							p.Id(val).String()
+							param_id = append(param_id, val)
 						} else if id_type == "float" {
 							p.Id(val).Float64()
+							param_id = append(param_id, val)
 						} else {
 							p.Id(val).Qual("C", id_type)
+							param_id = append(param_id, val)
 						}
 					}
 				}
@@ -513,8 +520,6 @@ func main() {
 				if len(tem_val[i]) != 0 {
 					t.Id("local_val").Op(":=").Qual("C", val).ValuesFunc(func(l *Group) {
 						for _, v := range tem_val[i] {
-							fmt.Println("55555", v)
-							//l.Id(v[1]).Op(":").Lit()
 							if len(v) > 2 {
 								l.Id(v[1]).Op(":").Lit(v[2])
 							} else { //0으로 초기화
@@ -532,8 +537,8 @@ func main() {
 					if clock_name_index > 0 {
 						t.Id(clock_name+"_now").Op(":=").Qual("time", "Now").Call()
 						t.Id(clock_name).Op(":=").Qual("time", "Since").Call(Id(clock_name + "_now"))
+						clock_id = append(clock_id, clock_name)
 					}
-
 				}
 				for j, val_loc := range tada_loc[i] {
 					t.Id(val_loc.id).Op(":")
@@ -548,22 +553,39 @@ func main() {
 						}
 					}
 					//여기서부터
-					t.Select().BlockFunc(func(s *Group) {
-						for _, trans_val := range srt_trans[i][j] {
-							fmt.Println(trans_val)
-
-							transition_case := make_trans(trans_val.selects, trans_val.guard, trans_val.sync)
-							make_update(trans_val.assign)
-							for _, t_case := range transition_case {
-								s.Case(
-									t_case,
-								).Block(
-
-									Goto().Id(trans_val.target),
+					time_passge, time_passage_target := make_time_passge(make_srt_trans[i][j])
+					if len(time_passge) > 2 {
+						t.Id(val_loc.id + "_passage").Op(":=").Index().String().ValuesFunc(func(q *Group) {
+							for _, t_guard := range time_passge {
+								q.Lit(t_guard)
+							}
+						})
+						//x 수정
+						t.Switch(Id("time_passage").Call(Id(val_loc.id+"_passage"), Id("x"))).BlockFunc(func(q *Group) {
+							for t_index, _ := range time_passge {
+								q.Case(Lit(t_index)).Block(
+									Goto().Id(time_passage_target[t_index]),
 								)
 							}
-						}
-					})
+						})
+					} else {
+						t.Select().BlockFunc(func(s *Group) {
+							for _, trans_val := range srt_trans[i][j] {
+								fmt.Println(trans_val)
+								transition_case := make_trans(trans_val.selects, trans_val.guard, trans_val.sync)
+								//new_update := make_update(trans_val.assign, param_id, clock_id)
+								for _, t_case := range transition_case {
+									s.Case(
+										t_case,
+									).Block(
+										make_update(trans_val.assign, param_id, clock_id),
+										Goto().Id(trans_val.target),
+									)
+
+								}
+							}
+						})
+					}
 
 				}
 			})
@@ -625,13 +647,91 @@ func main() {
 //		channel 사용시 + "_chan" 필요 go 채널의 경우 go routine과 겹침
 //  	transtion
 //		update
+func sort_make_tada_trans(loc [][]TADA_loc, trans [][]TADA_trastion) [][][]TADA_trastion {
+	srt_data := make([][][]TADA_trastion, 0)
+	// srt_loc := make([][]TADA_loc, 0)
+	// for _, tem := range loc {
+	// 	_srt_loc := make([]TADA_loc, 0)
+	// 	for _, val := range tem {
+	// 		if !strings.Contains(val.id, "p") {
+	// 			_srt_loc = append(_srt_loc, TADA_loc{val.id, val.name})
+	// 		}
+	// 	}
+	// 	srt_loc = append(srt_loc, _srt_loc)
+	// }
+	for i, tem := range loc {
+		_srt_data := make([][]TADA_trastion, 0)
+		for _, val := range tem {
+			_trnas := make([]TADA_trastion, 0)
+			if !strings.Contains(val.id, "p") {
+				for _, trans_q := range trans[i] {
+					_loc := trans_q.source
+					_loc = strings.Trim(_loc, "p")
+					if _loc == val.id {
+						_trnas = append(_trnas, trans_q)
+					}
+				}
+			}
 
-func make_update(update string) {
-	fmt.Println("1111", update)
-	if strings.Contains(update, "=") {
-
-	} else if strings.Contains(update, "(") {
+			_srt_data = append(_srt_data, _trnas)
+		}
+		srt_data = append(srt_data, _srt_data)
 	}
+	return srt_data
+}
+func make_time_passge(transition []TADA_trastion) ([]string, []string) {
+	fmt.Println("222", transition)
+	var rst []string
+	var rst_target []string
+
+	for _, val := range transition {
+		if val.guard != "" && val.assign == "" && val.selects == "" && val.sync == "" {
+			rst = append(rst, val.guard)
+			rst_target = append(rst_target, val.target)
+		}
+	}
+	return rst, rst_target
+
+}
+func make_update(update string, param_id []string, clock_id []string) *Statement {
+
+	if strings.Contains(update, "=") {
+		index := strings.Index(update, "=")
+
+		_id := update[:index]
+		_value := update[index+1:]
+		_id = strings.Trim(_id, " ")
+		_value = strings.Trim(_value, " ")
+		check_clock(_id, clock_id)
+		if check_clock(_id, clock_id) {
+			//rst = append(rst, Id(_id+"_now").Op("=").Qual("time", "Now").Call())
+			return Id(_id+"_now").Op("=").Qual("time", "Now").Call()
+		} else if check_clock(_id, param_id) {
+
+		} else {
+			//rst = append(rst, Qual("C", _id).Op("=").Lit(_value))
+			return Qual("C", _id).Op("=").Lit(_value)
+		}
+	} else if strings.Contains(update, "(") {
+		lpindex := strings.Index(update, "(")
+		rpindex := strings.Index(update, ")")
+		//fmt.Println(lpindex, rpindex)
+		_id := update[:lpindex]
+		_value := update[lpindex+1 : rpindex]
+		_id = strings.Trim(_id, " ")
+		_value = strings.Trim(_value, " ")
+		//rst = append(rst, Qual("C", _id).Call(Id(_value)))
+		return Qual("C", _id).Call(Id(_value))
+	}
+	return Id("")
+}
+func check_clock(id string, clock []string) bool {
+	for _, val := range clock {
+		if val == id {
+			return true
+		}
+	}
+	return false
 }
 func make_trans(selects string, guard string, sync string) []*Statement {
 	var rst []*Statement
