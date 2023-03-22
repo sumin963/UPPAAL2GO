@@ -553,11 +553,12 @@ func main() {
 							fmt.Println(trans_val)
 
 							transition_case := make_trans(trans_val.selects, trans_val.guard, trans_val.sync)
+							make_update(trans_val.assign)
 							for _, t_case := range transition_case {
 								s.Case(
 									t_case,
 								).Block(
-									//update 추가
+
 									Goto().Id(trans_val.target),
 								)
 							}
@@ -625,6 +626,13 @@ func main() {
 //  	transtion
 //		update
 
+func make_update(update string) {
+	fmt.Println("1111", update)
+	if strings.Contains(update, "=") {
+
+	} else if strings.Contains(update, "(") {
+	}
+}
 func make_trans(selects string, guard string, sync string) []*Statement {
 	var rst []*Statement
 	if selects == "" {
