@@ -225,7 +225,7 @@ func when(guard bool, channel chan bool) chan bool {
 	}
 	return channel
 }
-func when_guard(guard bool) <-chan time.time {
+func when_guard(guard bool) <-chan time.Time {
 	if !guard {
 		return nil
 	}

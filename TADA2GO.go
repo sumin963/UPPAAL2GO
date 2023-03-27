@@ -604,7 +604,7 @@ func main() {
 		)
 		g.Return(Id("channel"))
 	})
-	f.Func().Id("when_guard").Params(Id("guard").Bool()).Op("<-").Chan().Qual("time", "time").BlockFunc(func(g *Group) {
+	f.Func().Id("when_guard").Params(Id("guard").Bool()).Op("<-").Chan().Qual("time", "Time").BlockFunc(func(g *Group) {
 		g.If(
 			Op("!").Id("guard"),
 		).Block(
@@ -642,6 +642,13 @@ func main() {
 	a := f.Save("uppaal2go_result.go")
 	fmt.Printf("%#v", f, a)
 }
+
+//
+// 조건식을 문자열이아니라 조건식으로 변환
+//	함수의 경우 C.  ,  &local_val 가 들어가야함
+// time_passage 에서 앞부분에 따로 선언해야함
+// 전이 가드 수정
+// 로컬변수 값 초기화할때 값 수정
 
 //	 chan 선언시 chan 용량 C.n
 //		channel 사용시 + "_chan" 필요 go 채널의 경우 go routine과 겹침
