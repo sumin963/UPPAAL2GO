@@ -43,19 +43,19 @@ import "C"
 
 func main() {
 	eps := time.Millisecond * 10
-	appr_chan := make([]chan bool, "C.N")
+	appr_chan := make([]chan bool, C.N)
 	for i := range appr_chan {
 		appr_chan[i] = make(chan bool)
 	}
-	stop_chan := make([]chan bool, "C.N")
+	stop_chan := make([]chan bool, C.N)
 	for i := range stop_chan {
 		stop_chan[i] = make(chan bool)
 	}
-	leave_chan := make([]chan bool, "C.N")
+	leave_chan := make([]chan bool, C.N)
 	for i := range leave_chan {
 		leave_chan[i] = make(chan bool)
 	}
-	go_chan := make([]chan bool, "C.N")
+	go_chan := make([]chan bool, C.N)
 	for i := range go_chan {
 		go_chan[i] = make(chan bool)
 	}
@@ -87,11 +87,16 @@ func main() {
 		id2_passage = []string{"x==3", "x>3", "x>5"}
 		switch time_passage(id2_passage, x) {
 		case 0:
-			goto id2p
 		case 1:
-			goto id2pp
+			goto id2p
 		case 2:
+			goto id2pp
+		case 3:
 			goto exp
+		}
+		select {
+		case <-time.After(time.Second*3 - x - eps):
+			goto id2p
 		}
 	id3:
 		x = time.Since(x_now)
@@ -99,11 +104,18 @@ func main() {
 		id3_passage = []string{"x==10", "x>10", "x>20"}
 		switch time_passage(id3_passage, x) {
 		case 0:
-			goto id3p
 		case 1:
-			goto id3pp
+			goto id3p
 		case 2:
+			goto id3pp
+		case 3:
 			goto exp
+		}
+		select {
+		case <-time.After(time.Second*10 - x - eps):
+			goto id3p
+		case <-stop_chan[id]:
+			goto id1
 		}
 	id4:
 		x = time.Since(x_now)
@@ -111,11 +123,16 @@ func main() {
 		id4_passage = []string{"x==7", "x>7", "x>15"}
 		switch time_passage(id4_passage, x) {
 		case 0:
-			goto id4p
 		case 1:
-			goto id4pp
+			goto id4p
 		case 2:
+			goto id4pp
+		case 3:
 			goto exp
+		}
+		select {
+		case <-time.After(time.Second*7 - x - eps):
+			goto id4p
 		}
 	exp:
 		x = time.Since(x_now)
@@ -200,7 +217,7 @@ func main() {
 		}
 	id7:
 		select {
-		case when("len > 0", go_chan[front()]) <- true:
+		case when(local_val.len > 0, go_chan[C.front(&local_val)]) <- true:
 			goto id6
 		case <-time.After(time.Second * 40):
 			C.enqueue(&local_val, e)

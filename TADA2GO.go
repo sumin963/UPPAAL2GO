@@ -465,7 +465,6 @@ func main() {
 	cgo_dec := after_treatment(tem_name)
 	srt_trans := sort_tada_trans(tada_loc, tada_trans)
 	make_srt_trans := sort_make_tada_trans(tada_loc, tada_trans)
-	fmt.Println("dd", make_srt_trans)
 	//코드 생성
 	f := NewFilePathName("/uppaal2go_result.go", "main")
 	for _, val := range cgo_dec {
@@ -480,8 +479,8 @@ func main() {
 					_lbracket := strings.Index(val[0], "[")
 					_rbracket := strings.Index(val[0], "]")
 					_string := val[0][_lbracket+1 : _rbracket]
-
-					s.Make(Index().Chan().Bool(), Lit("C."+_string)) //용량 설정 - C.N이 아닌 다른 숫자가 들어와도 가능하게끔만들어야함
+					//Lit("C."+_string)
+					s.Make(Index().Chan().Bool(), Qual("C", _string)) //용량 설정 - C.N이 아닌 다른 숫자가 들어와도 가능하게끔만들어야함
 					g.For(
 						Id("i").Op(":=").Range().Id(val[1] + "_chan"),
 					).Block(
@@ -569,33 +568,33 @@ func main() {
 						})
 						//x 수정
 						t.Switch(Id("time_passage").Call(Id(val_loc.id+"_passage"), Id("x"))).BlockFunc(func(q *Group) {
+							q.Case(Lit(0)).Block()
 							for t_index, _ := range time_passge {
-								q.Case(Lit(t_index)).Block(
+								q.Case(Lit(t_index + 1)).Block(
 									Goto().Id(time_passage_target[t_index]),
 								)
 							}
 						})
-					} else {
-						t.Select().BlockFunc(func(s *Group) {
-							for _, trans_val := range srt_trans[i][j] {
-								fmt.Println(trans_val)
-								transition_case := make_trans(trans_val.selects, trans_val.guard, trans_val.sync, clock_id, param_id)
-								make_update := make_update(trans_val.assign, param_id, clock_id)
-
-								for _, t_case := range transition_case {
-									s.Case(
-										t_case,
-									).BlockFunc(func(q *Group) {
-										for _, new_update := range make_update {
-											q.Add(new_update)
-										}
-										q.Goto().Id(trans_val.target)
-									})
-
-								}
-							}
-						})
 					}
+					t.Select().BlockFunc(func(s *Group) {
+						for _, trans_val := range srt_trans[i][j] {
+							fmt.Println(trans_val)
+							transition_case := make_trans(trans_val.selects, trans_val.guard, trans_val.sync, clock_id, param_id)
+							make_update := make_update(trans_val.assign, param_id, clock_id)
+
+							for _, t_case := range transition_case {
+								s.Case(
+									t_case,
+								).BlockFunc(func(q *Group) {
+									for _, new_update := range make_update {
+										q.Add(new_update)
+									}
+									q.Goto().Id(trans_val.target)
+								})
+
+							}
+						}
+					})
 
 				}
 			})
@@ -653,12 +652,13 @@ func main() {
 	fmt.Printf("%#v", f, a)
 }
 
-// 조건식을 문자열이아니라 조건식으로 변환
-// 함수의 경우 C.  ,  &local_val 가 들어가야함 0
+// 조건식을 문자열이아니라 조건식으로 변환 O
+// 함수의 경우 C.  ,  &local_val 가 들어가야함 O
 // time_passage 에서 앞부분에 따로 선언해야함 O
 // 전이 가드 수정	O
 // 로컬변수 값 초기화할때 값 수정
 // chan 선언시 chan 용량 C.n O
+// time_passage로 인한 현재 로케이션 이탈 문제 해결
 
 //		channel 사용시 + "_chan" 필요 go 채널의 경우 go routine과 겹침
 //  	transtion
@@ -741,7 +741,6 @@ func make_update(update string, param_id []string, clock_id []string) []*Stateme
 		_value := update[lpindex+1 : rpindex]
 		_id = strings.Trim(_id, " ")
 		_value = strings.Trim(_value, " ")
-		fmt.Println("2222", _value)
 		rst = append(rst, Qual("C", _id).Call(Op("&").Id("local_val"), Id(_value)))
 	}
 	return rst
@@ -762,12 +761,12 @@ func make_trans(selects string, guard string, sync string, clock []string, param
 			return rst
 		} else if guard != "" && sync == "" { //가드만 있을 때 시간만 있다고 가정해서 시간이 아닌 표현식이 들어왔을때 구분해주는게 필요
 			if strings.Contains(guard, "==") {
-				_time, _val := guard_preprocessing(guard)
+				_time, _val, _ := guard_preprocessing(guard)
 				_value, _ := strconv.Atoi(_val)
 				rst = append(rst, Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(_value).Op("-").Id(_time).Op("-").Id("eps")))
 				return rst
 			} else if strings.Contains(guard, ">") {
-				_time, _val := guard_preprocessing(guard)
+				_time, _val, _ := guard_preprocessing(guard)
 				_value, _ := strconv.Atoi(_val)
 				rst = append(rst, Op("<-").Qual("time", "After").Call(Qual("time", "Second").Op("*").Lit(_value).Op("-").Id(_time)))
 				return rst
@@ -787,11 +786,11 @@ func make_trans(selects string, guard string, sync string, clock []string, param
 		} else if guard != "" && sync != "" {
 			if strings.Contains(sync, "!") {
 				sync = strings.Trim(sync, "!")
-				rst = append(rst, when_sync(sync, guard, "!"))
+				rst = append(rst, when_sync(sync, guard, "!", param))
 				return rst
 			} else if strings.Contains(sync, "?") {
 				sync = strings.Trim(sync, "?")
-				rst = append(rst, when_sync(sync, guard, "?"))
+				rst = append(rst, when_sync(sync, guard, "?", param))
 				return rst
 			}
 		}
@@ -809,44 +808,149 @@ func select_preprocessing(_select string) (string, string) {
 	_type = strings.Trim(_type, " ")
 	return _value, _type
 }
-func guard_preprocessing(_guard string) (string, string) {
+func guard_preprocessing(_guard string) (string, string, string) {
 	if strings.Contains(_guard, "==") {
 		index := strings.Index(_guard, "==")
 		_value := _guard[:index]
 		_type := _guard[index+2:]
 		_value = strings.Trim(_value, " ")
 		_type = strings.Trim(_type, " ")
-		return _value, _type
-	} else {
+		return _value, _type, "=="
+	} else if strings.Contains(_guard, ">") {
 		index := strings.Index(_guard, ">")
 		_value := _guard[:index]
 		_type := _guard[index+1:]
 		_value = strings.Trim(_value, " ")
 		_type = strings.Trim(_type, " ")
-		return _value, _type
+		return _value, _type, ">"
+	} else if strings.Contains(_guard, ">=") {
+		index := strings.Index(_guard, ">=")
+		_value := _guard[:index]
+		_type := _guard[index+1:]
+		_value = strings.Trim(_value, " ")
+		_type = strings.Trim(_type, " ")
+		return _value, _type, ">="
+	} else if strings.Contains(_guard, "<") {
+		index := strings.Index(_guard, "<")
+		_value := _guard[:index]
+		_type := _guard[index+1:]
+		_value = strings.Trim(_value, " ")
+		_type = strings.Trim(_type, " ")
+		return _value, _type, "<"
+	} else if strings.Contains(_guard, "<=") {
+		index := strings.Index(_guard, "<=")
+		_value := _guard[:index]
+		_type := _guard[index+1:]
+		_value = strings.Trim(_value, " ")
+		_type = strings.Trim(_type, " ")
+		return _value, _type, "<="
+	} else {
+		return "", "", ""
 	}
-
 }
-func when_sync(sync string, guard string, op string) *Statement {
+func guard_postprocessing(_left string, _right string, param []string, op string) *Statement {
+	var rst *Statement
+	trans_num, _ := strconv.Atoi(_left)
+	if _left == "0" {
+		rst = Lit(0)
+	} else if trans_num != 0 {
+		rst = Lit(trans_num)
+	} else if strings.Contains(_left, "(") {
+	} else {
+		_flage := false
+		for _, val := range param {
+			if _left == val {
+				_flage = true
+			}
+		}
+		if _flage == true {
+			rst = Id(_left)
+		} else {
+			rst = Id("local_val").Dot(_left)
+		}
+	}
+	if op == "==" {
+		rst = rst.Op("==")
+	} else if op == ">" {
+		rst = rst.Op(">")
+	} else if op == "<" {
+		rst = rst.Op("<")
+	} else if op == "<=" {
+		rst = rst.Op("<=")
+	} else if op == ">=" {
+		rst = rst.Op(">=")
+	}
+	trans_num, _ = strconv.Atoi(_right)
+	if _right == "0" {
+		rst = rst.Lit(0)
+	} else if trans_num != 0 {
+		rst = rst.Lit(trans_num)
+	} else if strings.Contains(_right, "(") {
+	} else {
+		_flage := false
+		for _, val := range param {
+			if _right == val {
+				_flage = true
+			}
+		}
+		if _flage == true {
+			rst = rst.Id(_right)
+		} else {
+			rst = rst.Id("local_val").Dot(_left)
+		}
+	}
+	return rst
+}
+func when_sync(sync string, guard string, op string, param []string) *Statement {
+	var rst *Statement
+	_left, _right, _op := guard_preprocessing(guard)
+	_guard := guard_postprocessing(_left, _right, param, _op)
 	if strings.Contains(sync, "[") {
 		index_lbracket := strings.Index(sync, "[")
 		index_rbracket := strings.Index(sync, "]")
 
-		rst := sync[:index_lbracket]
+		id := sync[:index_lbracket]
 		num := sync[index_lbracket+1 : index_rbracket]
-		rst = strings.Trim(rst, " ")
+		id = strings.Trim(id, " ")
 		num = strings.Trim(num, " ") // num확인 필요
-		if op == "?" {
-			return Op("<-").Id("when").Call(Lit(guard), Id(rst+"_chan").Index(Id(num)))
+
+		trans_num, _ := strconv.Atoi(num)
+		rst = Id(id + "_chan").Index(Id(num))
+
+		if num == "0" {
+			rst = Id(id + "_chan").Index(Lit(0))
+		} else if trans_num != 0 {
+			rst = Id(id + "_chan").Index(Lit(trans_num))
+		} else if strings.Contains(num, "(") {
+			index_lbracket = strings.Index(num, "(")
+			//index_rbracket := strings.Index(num, ")")
+			func_id := num[:index_lbracket]
+			//func_param := num[index_lbracket+1 : index_rbracket] //param이 없다고 가정, 수정 필요
+			rst = Id(id + "_chan").Index(Qual("C", func_id).Call(Op("&").Id("local_val")))
 		} else {
-			return Id("when").Call(Lit(guard), Id(rst+"_chan").Index(Id(num))).Op("<-").Lit(true)
+			_flage := false
+			for _, val := range param {
+				if num == val {
+					_flage = true
+				}
+			}
+			if _flage == true {
+				rst = Id(id + "_chan").Index(Id(num))
+			} else {
+				rst = Id(id + "_chan").Index(Qual("C", num))
+			}
+		}
+
+		if op == "?" {
+			return Op("<-").Id("when").Call(Add(_guard), rst)
+		} else {
+			return Id("when").Call(Add(_guard), rst).Op("<-").Lit(true)
 		}
 	} else {
 		if op == "?" {
-			return Op("<-").Id("when").Call(Lit(guard), Id(sync+"_chan"))
-
+			return Op("<-").Id("when").Call(Add(_guard), Id(sync+"_chan"))
 		} else {
-			return Id("when").Call(Lit(guard), Id(sync+"_chan")).Op("<-").Lit(true)
+			return Id("when").Call(Add(_guard), Id(sync+"_chan")).Op("<-").Lit(true)
 		}
 	}
 }
