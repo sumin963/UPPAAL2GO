@@ -55,13 +55,16 @@ func main() {
 	for i := range leave_chan {
 		leave_chan[i] = make(chan bool)
 	}
-	go_chan := make([]chan bool, "C.")
+	go_chan := make([]chan bool, "C.N")
 	for i := range go_chan {
 		go_chan[i] = make(chan bool)
 	}
 	Train := func(id C.id_t) {
 		x_now := time.Now()
 		x := time.Since(x_now)
+		var id2_passage []string
+		var id3_passage []string
+		var id4_passage []string
 	id0:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "Safe", "location", "x", ":", x)
@@ -81,7 +84,7 @@ func main() {
 	id2:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "Cross", "location", "x", ":", x)
-		id2_passage := []string{"x==3", "x>3", "x>5"}
+		id2_passage = []string{"x==3", "x>3", "x>5"}
 		switch time_passage(id2_passage, x) {
 		case 0:
 			goto id2p
@@ -93,7 +96,7 @@ func main() {
 	id3:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "Appr", "location", "x", ":", x)
-		id3_passage := []string{"x==10", "x>10", "x>20"}
+		id3_passage = []string{"x==10", "x>10", "x>20"}
 		switch time_passage(id3_passage, x) {
 		case 0:
 			goto id3p
@@ -105,7 +108,7 @@ func main() {
 	id4:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "Start", "location", "x", ":", x)
-		id4_passage := []string{"x==7", "x>7", "x>15"}
+		id4_passage = []string{"x==7", "x>7", "x>15"}
 		switch time_passage(id4_passage, x) {
 		case 0:
 			goto id4p
@@ -122,44 +125,37 @@ func main() {
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "id2p", "location", "x", ":", x)
 		select {
-		case <-when_guard("x>3"):
-
+		case <-time.After(time.Second*3 - x):
 			goto id2pp
 		case leave_chan[id] <- true:
-
 			goto id0
 		}
 	id2pp:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "id2pp", "location", "x", ":", x)
 		select {
-		case <-when_guard("x>5"):
-
+		case <-time.After(time.Second*5 - x):
 			goto exp
 		case leave_chan[id] <- true:
-
 			goto id0
 		}
 	id3p:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "id3p", "location", "x", ":", x)
 		select {
-		case <-when_guard("x>10"):
-
+		case <-time.After(time.Second*10 - x):
 			goto id3pp
 		case <-time.After(time.Second * 0):
 			x_now = time.Now()
 			goto id2
 		case <-stop_chan[id]:
-
 			goto id1
 		}
 	id3pp:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "id3pp", "location", "x", ":", x)
 		select {
-		case <-when_guard("x>20"):
-
+		case <-time.After(time.Second*20 - x):
 			goto exp
 		case <-time.After(time.Second * 0):
 			x_now = time.Now()
@@ -169,8 +165,7 @@ func main() {
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "id4p", "location", "x", ":", x)
 		select {
-		case <-when_guard("x>7"):
-
+		case <-time.After(time.Second*7 - x):
 			goto id4pp
 		case <-time.After(time.Second * 0):
 			x_now = time.Now()
@@ -180,8 +175,7 @@ func main() {
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "id4pp", "location", "x", ":", x)
 		select {
-		case <-when_guard("x>15"):
-
+		case <-time.After(time.Second*15 - x):
 			goto exp
 		case <-time.After(time.Second * 0):
 			x_now = time.Now()
@@ -192,26 +186,24 @@ func main() {
 		local_val := C.Gate{list: 0, len: 0}
 	id5:
 		select {
-		case stop_chan[tail()] <- true:
-
+		case stop_chan[C.tail(&local_val)] <- true:
 			goto id6
 		}
 	id6:
 		select {
 		case <-time.After(time.Second * 40):
-			C.enqueue(e)
+			C.enqueue(&local_val, e)
 			goto id5
 		case <-time.After(time.Second * 40):
-			C.dequeue()
+			C.dequeue(&local_val)
 			goto id7
 		}
 	id7:
 		select {
 		case when("len > 0", go_chan[front()]) <- true:
-
 			goto id6
 		case <-time.After(time.Second * 40):
-			C.enqueue(e)
+			C.enqueue(&local_val, e)
 			goto id6
 		}
 	}

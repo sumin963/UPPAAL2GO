@@ -265,7 +265,7 @@ func main() {
 
 	gate := func() { //selcet부분과, 하나의 로케이션에서 엣지가 여러개일떄 자동으로 생성하는 방법 고려.
 
-		local_val := C.Gate{list: [7]C.id_t{0, 0, 0, 0, 0, 0, 0}, len: 0}
+		local_val := C.Gate{list: [C.N + 1]C.id_t{0, 0, 0, 0, 0, 0, 0}, len: 0}
 
 	free:
 		fmt.Println("gate free")
