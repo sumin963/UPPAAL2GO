@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+	<declaration>const int pubsubtime=1;
+
+
+const int pub_num=4;
+const int sub_num=1;
+const int sen_num=4;
+
+
+typedef int[0,pub_num-1] pub;
+typedef int[0,sen_num-1] sen_pub;
+typedef int[0,sub_num] sub;
+typedef int[0,pub_num] pub_len;
+//LP,GP,OD,CR,Stress
+const int ctimemin[pub]={1,1,1,1};
+const int ctimemax[pub]={3,3,3,2};
+const int period[pub]={20,20,20,20};
+
+urgent chan queue[pub][sub];
+urgent chan sen_queue[sen_pub][sub];
+
+const int N =10;
+typedef int[0,N] id_t;
+
+int[0,10] sen_len[sen_pub]={0,0,0,0};</declaration>
+	<template>
+		<name x="5" y="5">Node</name>
+		<parameter>const pub pub_id</parameter>
+		<declaration>// Place local declarations here.
+clock x,t;
+
+</declaration>
+		<location id="id0" x="-204" y="0">
+		</location>
+		<location id="id1" x="-136" y="-102">
+		</location>
+		<location id="id2" x="68" y="-102">
+		</location>
+		<location id="id3" x="68" y="0">
+		</location>
+		<location id="id4" x="408" y="-102">
+			<name x="398" y="-136">exp</name>
+		</location>
+		<location id="id5" x="238" y="0">
+		</location>
+		<location id="id6" x="408" y="0">
+		</location>
+		<location id="id7" x="408" y="102">
+		</location>
+		<location id="id8" x="578" y="102">
+		</location>
+		<location id="id9" x="238" y="102">
+		</location>
+		<init ref="id0"/>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id4"/>
+			<label kind="guard" x="586" y="-34">t&gt;period[pub_id]</label>
+			<nail x="578" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id4"/>
+			<label kind="guard" x="416" y="-34">x&gt;ctimemax[pub_id]</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id0"/>
+			<label kind="assignment" x="578" y="153">t=0</label>
+			<nail x="578" y="204"/>
+			<nail x="-204" y="204"/>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id9"/>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id9"/>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id7"/>
+			<label kind="synchronisation" x="263" y="85">queue[pub_id][0]!</label>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id8"/>
+			<label kind="guard" x="433" y="76">t==period[pub_id]</label>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id6"/>
+			<label kind="guard" x="263" y="-34">x&gt;ctimemin[pub_id]</label>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id5"/>
+			<label kind="guard" x="85" y="-34">x==ctimemin[pub_id]</label>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id2"/>
+			<label kind="synchronisation" x="-8" y="-187">sen_queue[pub_id][1]?</label>
+			<nail x="34" y="-170"/>
+			<nail x="102" y="-170"/>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="-221" y="-195">sen_queue[pub_id][1]?</label>
+			<nail x="-170" y="-170"/>
+			<nail x="-102" y="-170"/>
+			<nail x="-102" y="-170"/>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id3"/>
+			<label kind="assignment" x="76" y="-51">x=0</label>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id4"/>
+			<label kind="guard" x="85" y="-127">x&gt;pubsubtime</label>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id3"/>
+			<label kind="guard" x="-170" y="0">sen_len[pub_id]==0</label>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id2"/>
+			<label kind="guard" x="-119" y="-127">x==pubsubtime</label>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="guard" x="-314" y="-85">sen_len[pub_id]&gt;0</label>
+		</transition>
+	</template>
+	<template>
+		<name>Controller</name>
+		<declaration>clock x,t;
+</declaration>
+		<location id="id10" x="904" y="285">
+		</location>
+		<location id="id11" x="734" y="81">
+			<name x="724" y="47">exp</name>
+		</location>
+		<location id="id12" x="734" y="183">
+		</location>
+		<location id="id13" x="122" y="183">
+		</location>
+		<location id="id14" x="564" y="285">
+		</location>
+		<location id="id15" x="564" y="183">
+		</location>
+		<location id="id16" x="734" y="285">
+		</location>
+		<location id="id17" x="394" y="183">
+		</location>
+		<location id="id18" x="394" y="81">
+		</location>
+		<location id="id19" x="190" y="81">
+		</location>
+		<init ref="id13"/>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id18"/>
+			<label kind="synchronisation" x="280" y="-34">queue[0][1]?</label>
+			<nail x="340" y="0"/>
+			<nail x="374" y="-34"/>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id18"/>
+			<label kind="synchronisation" x="425" y="-34">queue[2][1]?</label>
+			<nail x="408" y="-34"/>
+			<nail x="442" y="0"/>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id19"/>
+			<label kind="synchronisation" x="212" y="-42">queue[2][1]?</label>
+			<nail x="204" y="-34"/>
+			<nail x="238" y="0"/>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id19"/>
+			<label kind="synchronisation" x="76" y="-42">queue[0][1]?</label>
+			<nail x="136" y="0"/>
+			<nail x="170" y="-34"/>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id11"/>
+			<label kind="guard" x="912" y="149">t&gt;period[3]</label>
+			<nail x="904" y="81"/>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id11"/>
+			<label kind="guard" x="742" y="149">x&gt;ctimemax[3]</label>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id13"/>
+			<label kind="assignment" x="904" y="336">t=0</label>
+			<nail x="904" y="387"/>
+			<nail x="122" y="387"/>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id14"/>
+		</transition>
+		<transition>
+			<source ref="id15"/>
+			<target ref="id14"/>
+		</transition>
+		<transition>
+			<source ref="id14"/>
+			<target ref="id16"/>
+			<label kind="synchronisation" x="589" y="268">sen_queue[3][0]!</label>
+		</transition>
+		<transition>
+			<source ref="id16"/>
+			<target ref="id10"/>
+			<label kind="guard" x="759" y="259">t==period[3]</label>
+		</transition>
+		<transition>
+			<source ref="id15"/>
+			<target ref="id12"/>
+			<label kind="guard" x="589" y="149">x&gt;ctimemin[3]</label>
+		</transition>
+		<transition>
+			<source ref="id17"/>
+			<target ref="id15"/>
+			<label kind="guard" x="411" y="149">x==ctimemin[3]</label>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id18"/>
+			<label kind="synchronisation" x="348" y="-59">queue[1][1]?</label>
+			<nail x="374" y="-34"/>
+			<nail x="408" y="-34"/>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id19"/>
+			<label kind="synchronisation" x="153" y="-59">queue[1][1]?</label>
+			<nail x="170" y="-34"/>
+			<nail x="187" y="-34"/>
+			<nail x="204" y="-34"/>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id17"/>
+			<label kind="assignment" x="402" y="132">x=0</label>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id11"/>
+			<label kind="guard" x="411" y="56">x&gt;pubsubtime</label>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id17"/>
+			<label kind="guard" x="156" y="183">sen_len[3]==0</label>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id18"/>
+			<label kind="guard" x="207" y="56">x==pubsubtime</label>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id19"/>
+			<label kind="guard" x="12" y="98">sen_len[3]&gt;0</label>
+		</transition>
+	</template>
+	<system>// Place template instantiations here.
+lp=Node(0);
+gp=Node(1);
+od=Node(2);
+cr=Controller();
+
+system lp,gp,od,cr;</system>
+	<queries>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+	</queries>
+</nta>
