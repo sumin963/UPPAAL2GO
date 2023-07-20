@@ -1,5 +1,6 @@
 package main
 
+// 343line
 import (
 	"bufio"
 	"fmt"
@@ -340,7 +341,7 @@ func Lexer_param(param []string, dec string) ([][]string, []Token) {
 
 func main() {
 	doc := etree.NewDocument()
-	if err := doc.ReadFromFile("C:\\Users\\jsm96\\gitfolder\\UPPAAL2GO\\TADA.xml"); err != nil {
+	if err := doc.ReadFromFile("C:\\Users\\jsm96\\gitfolder\\UPPAAL2GO\\av_algo_tada.xml"); err != nil { //TADA.xml
 		panic(err)
 	}
 	tada_loc := make([][]TADA_loc, 0)
@@ -660,9 +661,9 @@ func main() {
 // chan 선언시 chan 용량 C.n O
 // time_passage로 인한 현재 로케이션 이탈 문제 해결
 
-//		channel 사용시 + "_chan" 필요 go 채널의 경우 go routine과 겹침
-//  	transtion
-//		update
+//			channel 사용시 + "_chan" 필요 go 채널의 경우 go routine과 겹침
+//	 	transtion
+//			update
 func sort_make_tada_trans(loc [][]TADA_loc, trans [][]TADA_trastion) [][][]TADA_trastion {
 	srt_data := make([][][]TADA_trastion, 0)
 	for i, tem := range loc {

@@ -40,6 +40,8 @@ func main() {
 	Node := func(pub_id C.pub) {
 		x_now := time.Now()
 		x := time.Since(x_now)
+		t_now := time.Now()
+		t := time.Since(t_now)
 		var id0_passage []string
 		var id1_passage []string
 		var id2_passage []string
@@ -121,7 +123,7 @@ func main() {
 		case <-time.After(time.Second*0 - t):
 			goto id4
 		case <-time.After(time.Second * 0):
-			C.t = "0"
+			t_now = time.Now()
 			goto id0
 		}
 	id9:
@@ -133,20 +135,16 @@ func main() {
 		}
 	}
 	Controller := func() {
-		var id10_passage []string
-		var id12_passage []string
-		var id13_passage []string
-		var id15_passage []string
-		var id16_passage []string
-		var id17_passage []string
-		var id18_passage []string
-		var id19_passage []string
+		x_now := time.Now()
+		x := time.Since(x_now)
+		t_now := time.Now()
+		t := time.Since(t_now)
 	id10:
 		select {
 		case <-time.After(time.Second*0 - t):
 			goto id11
 		case <-time.After(time.Second * 0):
-			C.t = "0"
+			t_now = time.Now()
 			goto id13
 		}
 	id11:
@@ -196,7 +194,7 @@ func main() {
 		case <-queue_chan[1]:
 			goto id18
 		case <-time.After(time.Second * 0):
-			C.x = "0"
+			x_now = time.Now()
 			goto id17
 		case <-time.After(time.Second*0 - x):
 			goto id11
@@ -213,10 +211,10 @@ func main() {
 			goto id18
 		}
 	}
-	go lp()
-	go gp()
-	go od()
-	go cr()
+	go Node(0)
+	go Node(1)
+	go Node(2)
+	go Controller()
 	<-time.After(time.Second * 20)
 }
 func when(guard bool, channel chan bool) chan bool {

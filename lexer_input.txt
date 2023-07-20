@@ -1,51 +1,44 @@
+const int pubsubtime=1;
 
 
-const int N = 6;         
-typedef int[0,N-1] id_t;
-
-chan        appr[N], stop[N], leave[N];
-urgent chan go[N];
-
-//Train;
-clock x;
-//Gate;
-id_t list[N+1];
-int[0,N] len;
+const int pub_num=4;
+const int sub_num=1;
+const int sen_num=4;
 
 
-void enqueue(id_t element)
-{
-        list[len++] = element;
-}
+typedef int[0,pub_num-1] pub;
+typedef int[0,sen_num-1] sen_pub;
+typedef int[0,sub_num] sub;
+typedef int[0,pub_num] pub_len;
+
+const int ctimemin[pub]={1,1,1,1};
+const int ctimemax[pub]={3,3,3,2};
+const int period[pub]={20,20,20,20};
+
+urgent chan queue[pub][sub];
+urgent chan sen_queue[sen_pub][sub];
+
+const int N =10;
+typedef int[0,N] id_t;
+
+int[0,10] sen_len[sen_pub]={0,0,0,0};
+//Node;
+
+clock x,t;
 
 
-void dequeue()
-{
-        int i = 0;
-        len -= 1;
-        while (i < len)
-        {
-                list[i] = list[i + 1];
-                i++;
-        }
-        list[i] = 0;
-}
+//Controller;
+clock x,t;
 
-
-id_t front()
-{
-   return list[0];
-}
-
-
-id_t tail()
-{
-   return list[len - 1];
-}
-//param_Train;
-const id_t id;
-//param_Gate;
+//param_Node;
+const pub pub_id;
+//param_Controller;
 ;
 //system_dec;
-system Train, Gate;
 
+lp=Node(0);
+gp=Node(1);
+od=Node(2);
+cr=Controller();
+
+system lp,gp,od,cr;
