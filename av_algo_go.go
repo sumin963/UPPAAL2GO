@@ -42,21 +42,21 @@ func main() {
 		x := time.Since(x_now)
 		t_now := time.Now()
 		t := time.Since(t_now)
-		var id0_passage []string
-		var id1_passage []string
-		var id2_passage []string
-		var id3_passage []string
-		var id5_passage []string
-		var id6_passage []string
-		var id7_passage []string
-		var id8_passage []string
+		// var id0_passage []string
+		// var id1_passage []string
+		// var id2_passage []string
+		// var id3_passage []string
+		// var id5_passage []string
+		// var id6_passage []string
+		// var id7_passage []string
+		// var id8_passage []string
 	id0:
 		x = time.Since(x_now)
 		fmt.Println("Node", "template", "id0", "location", "x", ":", x)
 		select {
-		case <-time.After(time.Second*0 - sen_len[pub_id] - eps):
+		case <-time.After(time.Second*0 - C.sen_len[pub_id] - eps):
 			goto id3
-		case <-time.After(time.Second*0 - sen_len[pub_id]):
+		case <-time.After(time.Second*0 - C.sen_len[pub_id]):
 			goto id1
 		}
 	id1:
@@ -158,9 +158,9 @@ func main() {
 		}
 	id13:
 		select {
-		case <-time.After(time.Second*0 - sen_len[3] - eps):
+		case <-time.After(time.Second*0 - C.sen_len[3] - eps):
 			goto id17
-		case <-time.After(time.Second*0 - sen_len[3]):
+		case <-time.After(time.Second*0 - C.sen_len[3]):
 			goto id19
 		}
 	id14:
