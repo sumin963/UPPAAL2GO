@@ -341,7 +341,7 @@ func Lexer_param(param []string, dec string) ([][]string, []Token) {
 
 func main() {
 	doc := etree.NewDocument()
-	if err := doc.ReadFromFile("C:\\Users\\jsm96\\gitfolder\\UPPAAL2GO\\av_algo_tada.xml"); err != nil { //TADA.xml
+	if err := doc.ReadFromFile("C:\\Users\\jsm96\\gitfolder\\UPPAAL2GO\\TADA.xml"); err != nil { //TADA.xml
 		panic(err)
 	}
 	tada_loc := make([][]TADA_loc, 0)
@@ -518,7 +518,6 @@ func main() {
 				}
 			}).BlockFunc(func(t *Group) {
 				//local val 초기화
-				fmt.Println("4444", tem_val[i])
 				if len(tem_val[i]) != 0 {
 					t.Id("local_val").Op(":=").Qual("C", val).ValuesFunc(func(l *Group) {
 						for _, v := range tem_val[i] {
@@ -579,7 +578,7 @@ func main() {
 					}
 					t.Select().BlockFunc(func(s *Group) {
 						for _, trans_val := range srt_trans[i][j] {
-							fmt.Println(trans_val)
+							//fmt.Println(trans_val)
 							transition_case := make_trans(trans_val.selects, trans_val.guard, trans_val.sync, clock_id, param_id)
 							make_update := make_update(trans_val.assign, param_id, clock_id)
 
@@ -1132,8 +1131,8 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 	_param := false
 	_system := false
 	for i, _parse := range parse {
-		//fmt.Println(i, _parse)
-		if _local && contains(_parse, ASSIGN) { //여기서 부터 시작;;;;;;;;;;;;;;;
+		fmt.Println(i, _parse)
+		if _local && contains(_parse, ASSIGN) { //여기서 부터 시작
 
 		} else if _local && contains(_parse, IDENT) && contains(_parse, RPARENTHESIS) && contains(_parse, RBRACE) {
 			//fmt.Println("local _ func:", parse_lexr_data[i])
@@ -1175,6 +1174,7 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 			}
 
 		} else if contains(_parse, ASSIGN) { //initializer
+			fmt.Println("aaaaa", _parse, parse_lexr_data[i][0][2])
 			if parse[i][0] == PREFIX && parse_lexr_data[i][0][2] == "const" { //const int N = 6;		#define N 6
 				_ident := contain_index(parse[i], IDENT)
 				_int := contain_index(parse[i], INT)
@@ -1183,7 +1183,21 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 				_mappintstring = _mappintstring[:len(_mappintstring)-1]
 				_, err := output_file.Write([]byte(_mappintstring + "\n"))
 				check(err)
-				//fmt.Println("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + " " + mapping(parse_lexr_data, input_file_reader, i, _int))
+				fmt.Println(_mappintstring)
+				fmt.Println("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + " " + mapping(parse_lexr_data, input_file_reader, i, _int))
+			} else {
+				if parse[i][0] == TYPEID && parse_lexr_data[i][0][2] == "int" {
+					_ident := contain_index(parse[i], IDENT)
+					_int := contain_index(parse[i], INT)
+					_mappintstring := "#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + mapping(parse_lexr_data, input_file_reader, i, _int)
+					_mappintstring = strings.Trim(_mappintstring, " ")
+					_mappintstring = _mappintstring[:len(_mappintstring)-1]
+					_, err := output_file.Write([]byte(_mappintstring + "\n"))
+					check(err)
+					fmt.Println(_mappintstring)
+					fmt.Println("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + " " + mapping(parse_lexr_data, input_file_reader, i, _int))
+
+				}
 			}
 		} else if contains(_parse, IDENT) && contains(_parse, RPARENTHESIS) && contains(_parse, RBRACE) { //func 수정필요
 			//파라미터에 Local *local
