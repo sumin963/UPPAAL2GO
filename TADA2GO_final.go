@@ -13,47 +13,72 @@ import (
 	. "github.com/dave/jennifer/jen"
 )
 
+// 입력할 xml파일 경로
 var input_xml = "C:\\Users\\jsm96\\gitfolder\\UPPAAL2GO\\TADA.xml"
+
 var path = "lexer_input.txt"
 var dec_path = "cgo_input.txt"
 
 func main() {
+	//etree 객체 생성 및 xml 파일 열기
 	doc := etree.NewDocument()
 	if err := doc.ReadFromFile(input_xml); err != nil { //TADA.xml
 		panic(err)
 	}
+
+	//TADA의 정보가 담긴 xml 파일의 내용을 etree에 삽입
+	//input : doc  //xml파일
+	//output : xml_loc - location data, xml_transition - transition data, xml_dec - dec data, xml_tem - tem data
 	xml_loc, xml_transition, xml_dec, xml_tem := input_xml_to_slice(doc)
 	dec := xml_dec[0]
 	sys_dec := xml_dec[1]
 	tem_dec := xml_tem[0]
 	tem_name := xml_tem[1]
 	tem_param := xml_tem[2]
+
+	//xml파일의 declalation data를 lexer에 input하기 위해 전처리 과정
+	//declalation의 전처리
 	dec_string_comment_del := string_comment_del(dec) // /**/ 제거
+	//template declalation의 전처리
 	tem_dec_string_comment_del := tem_string_comment_del(tem_dec)
+	//system declalation의 전처리
 	sys_dec_string_comment_del := string_comment_del(sys_dec)
+	//declalation의 전처리
 	dec_comment_del := dec_line_comment_del(dec_string_comment_del) // //제거
 	tem_dec_comment_del := tem_line_comment_del(tem_dec_string_comment_del)
+	//template declalation의 전처리
 	sys_dec_comment_del := dec_line_comment_del(sys_dec_string_comment_del)
+	//system declalation의 전처리
 	//fmt.Println(xml_loc, xml_transition, tem_name, tem_param, dec_comment_del, tem_dec_comment_del, sys_dec_comment_del)
+
+	//전처리한 data를 lexer에 input하기 위해 파일 생성 후 파일에 전처리한 data 입력
 	lexer_input_file_generator(tem_name, tem_param, dec_comment_del, tem_dec_comment_del, sys_dec_comment_del)
 
+	//이전에 생성한 파일의 경로를 통해 lexer
 	rst_lexer, rst_token := Lexer_TADA()
 	//fmt.Println(rst_lexer, rst_token)
+
+	//lexer를 통해 얻은 결과를 입력으로 parer
 	syntax, syntax_lex_data := parse_TADA(rst_lexer, rst_token)
 	//fmt.Println(syntax, syntax_lex_data)
 
+	//처음 xml에서 받아온 tem_name을 이용하여  이전 함수를 통해 얻은 paser 결과를 후처리
 	cgo_dec := after_treatment(tem_name)
 	//fmt.Println(cgo_dec)
+
+	//xml에서 얻은 data를 통해 transition을 source location을 공유하는 trasition별로 분류하고 guard의 시간의 흐름에따라 정렬
 	srt_trans := sort_tada_trans(xml_loc, xml_transition)
 	//fmt.Println(srt_trans)
 
 	make_srt_trans := sort_make_tada_trans(xml_loc, xml_transition)
 	//fmt.Println(make_srt_trans)
 
+	//지금 까지 정리한 data들을 통해 golang 코드 생성
 	code_generator(syntax, syntax_lex_data, cgo_dec, make_srt_trans, tem_name, xml_loc, srt_trans)
 }
 
 func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]byte, make_srt_trans [][][]TADA_transition, tem_name []string, tada_loc [][]TADA_loc, srt_trans [][][]TADA_transition) {
+
 	tem_val, channel_tada, clock_tada, param_tada, sys_tada := map_token_2_c(syntax, syntax_lex_data)
 	f := NewFilePathName("/uppaal2go_result.go", "main")
 	for _, val := range cgo_dec {
