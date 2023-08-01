@@ -134,11 +134,14 @@ func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]
 				if len(tem_val[i]) != 0 {
 					t.Id("local_val").Op(":=").Qual("C", val).ValuesFunc(func(l *Group) {
 						for _, v := range tem_val[i] {
+							fmt.Println(tem_val[i], v)
 							if len(v) > 2 {
 								l.Id(v[1]).Op(":").Lit(v[2])
 							} else { //0으로 초기화
 								if strings.Contains(v[0], "[") {
-									l.Id(v[1]).Op(":").Lit(0) //수정
+									l.Id(v[1]).Op(":").Id(v[0]).ValuesFunc(func(block *Group) {
+										//for o:=0;o<        ;o++{block.Lit(0)}
+									})
 								} else {
 									l.Id(v[1]).Op(":").Lit(0)
 								}
@@ -305,6 +308,7 @@ func make_update(update string, param_id []string, clock_id []string) []*Stateme
 		_value := update[index+1:]
 		_id = strings.Trim(_id, " ")
 		_value = strings.Trim(_value, " ")
+		//fmt.Println(_value, "22")
 		check_clock(_id, clock_id)
 		if check_clock(_id, clock_id) {
 			rst = append(rst, Id(_id+"_now").Op("=").Qual("time", "Now").Call())
@@ -320,7 +324,15 @@ func make_update(update string, param_id []string, clock_id []string) []*Stateme
 		_value := update[lpindex+1 : rpindex]
 		_id = strings.Trim(_id, " ")
 		_value = strings.Trim(_value, " ")
+		_int_or_string, _ := strconv.Atoi(_value)
+		if _int_or_string == 0 { //문자열이라면
+			//rst = append(rst, Qual("C", _id).Call(Op("&").Id("local_val"), Id("C."+_value)))
+
+		} else {
+			//rst = append(rst, Qual("C", _id).Call(Op("&").Id("local_val"), Id(_value)))
+		}
 		rst = append(rst, Qual("C", _id).Call(Op("&").Id("local_val"), Id(_value)))
+
 	}
 	return rst
 }
