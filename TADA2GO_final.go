@@ -134,14 +134,35 @@ func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]
 				if len(tem_val[i]) != 0 {
 					t.Id("local_val").Op(":=").Qual("C", val).ValuesFunc(func(l *Group) {
 						for _, v := range tem_val[i] {
-							fmt.Println(tem_val[i], v)
 							if len(v) > 2 {
 								l.Id(v[1]).Op(":").Lit(v[2])
 							} else { //0으로 초기화
 								if strings.Contains(v[0], "[") {
-									l.Id(v[1]).Op(":").Id(v[0]).ValuesFunc(func(block *Group) {
-										//for o:=0;o<        ;o++{block.Lit(0)}
-									})
+									slice_name, slice_len := slice_make_C(v[0])
+									slice_len_val, _ := strconv.Atoi(slice_len)
+									if slice_len_val == 0 {
+										slice_op_index := strings.Index(slice_len, "+")
+										if slice_op_index == 0 {
+											l.Id(v[1]).Op(":").Id(slice_name).ValuesFunc(func(block *Group) {
+												for o := 0; o < slice_len_val; o++ { //수정
+													block.Lit(0)
+												}
+											})
+										} else { //수정
+											l.Id(v[1]).Op(":").Id(slice_name).ValuesFunc(func(block *Group) {
+												for o := 0; o < slice_len_val; o++ {
+													block.Lit(0)
+												}
+											})
+										}
+									} else {
+										l.Id(v[1]).Op(":").Id(slice_name).ValuesFunc(func(block *Group) {
+											for o := 0; o < slice_len_val; o++ {
+												block.Lit(0)
+											}
+										})
+									}
+
 								} else {
 									l.Id(v[1]).Op(":").Lit(0)
 								}
@@ -216,6 +237,7 @@ func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]
 			})
 		}
 		for _, val := range sys_tada {
+			fmt.Println(sys_tada)
 			g.Go().Id(val).Call()
 
 		}
@@ -266,6 +288,22 @@ func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]
 
 	a := f.Save("uppaal2go_result.go")
 	fmt.Printf("%#v", f, a)
+}
+func slice_make_C(str string) (string, string) {
+	l_parenthesis_index := strings.Index(str, "[")
+	r_parenthesis_index := strings.Index(str, "]")
+	slice_len := str[l_parenthesis_index+1 : r_parenthesis_index]
+	slice_name := str[r_parenthesis_index+1:]
+	val, _ := strconv.Atoi(slice_len)
+	if val == 0 {
+		str = "[" + "C." + slice_len + "]" + "C." + slice_name
+
+		return str, slice_len
+
+	} else {
+		str = "[" + slice_len + "]" + "C." + slice_name
+		return str, slice_len
+	}
 }
 func make_time_passge(transition []TADA_transition) ([]string, []string) {
 	var rst []string

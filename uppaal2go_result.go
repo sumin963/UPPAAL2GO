@@ -200,7 +200,7 @@ func main() {
 		}
 	}
 	Gate := func() {
-		local_val := C.Gate{list: [N + 1]id_t{}, len: 0}
+		local_val := C.Gate{list: [C.N + 1]C.id_t{}, len: 0}
 	id5:
 		select {
 		case stop_chan[C.tail(&local_val)] <- true:

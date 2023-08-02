@@ -8,10 +8,9 @@ import (
 	"strings"
 
 	"github.com/beevik/etree"
-	. "github.com/dave/jennifer/jen"
 )
 
-var new_type []string
+var read_file_path string = "train-gate.xml"
 
 type sort_data struct {
 	edge  *etree.Element
@@ -32,11 +31,10 @@ type tada_transition struct {
 }
 
 func main() {
-	doc := etree.NewDocument()
-	if err := doc.ReadFromFile("train-gate.xml"); err != nil {
-		panic(err)
-	}
-	f := NewFile("main")
+	ta2tada()
+}
+
+func open_xml(doc *etree.Document) (string, []string, [][][]string, [][]string) {
 
 	var dec string
 	var tem_dec []string
@@ -94,6 +92,15 @@ func main() {
 		}
 		fmt.Println("\n")
 	}
+	return dec, tem_dec, ta_loc_info, ta_tran_info
+}
+func ta2tada() {
+	doc := etree.NewDocument()
+	if err := doc.ReadFromFile(read_file_path); err != nil {
+		panic(err)
+	}
+
+	dec, tem_dec, ta_loc_info, ta_tran_info := open_xml(doc)
 	clock := make([][]string, len(ta_loc_info))
 	for i, value := range tem_dec { //declaration과 template declaraion에서 clock 추출
 		clock[i] = make([]string, 0)
@@ -103,7 +110,6 @@ func main() {
 		clock[i] = append(clock[i], _clock...)
 	}
 
-	fmt.Printf("%#v", f)
 	fmt.Println(ta_loc_info)
 	fmt.Println(ta_tran_info)
 	fmt.Println(clock)
@@ -366,35 +372,78 @@ func main() {
 }
 
 func ispossible(val transition_e_prime, edge *etree.Element, clock [][]string, tem_num int) bool {
+	// result := false
+	// for _, label := range edge.FindElements("label") {
+	// 	if label.Attr[0].Value == "guard" {
+	// 		_guard := label.Text()
+
+	// 		if strings.Contains(_guard, "<=") {
+	// 			if find_int_element_ispossible(clock, _guard, tem_num) >= find_int_element_ispossible(clock, val.guard, tem_num) {
+	// 				return true
+	// 			}
+	// 		} else if strings.Contains(_guard, "<") {
+	// 			if (find_int_element_ispossible(clock, _guard, tem_num) > find_int_element_ispossible(clock, val.guard, tem_num)) || ((find_int_element_ispossible(clock, _guard, tem_num) == find_int_element_ispossible(clock, val.guard, tem_num)) && (get_form(val.guard) == "x<n")) {
+	// 				return true
+	// 			}
+	// 		} else if strings.Contains(_guard, "==") {
+	// 			if (find_int_element_ispossible(clock, _guard, tem_num) == find_int_element_ispossible(clock, val.guard, tem_num)) && (get_form(val.guard) == "x>n") {
+	// 				return true
+	// 			}
+	// 		} else if strings.Contains(_guard, ">=") {
+
+	// 			if find_int_element_ispossible(clock, _guard, tem_num) < find_int_element_ispossible(clock, val.guard, tem_num) || ((find_int_element_ispossible(clock, _guard, tem_num) == find_int_element_ispossible(clock, val.guard, tem_num)) && (get_form(val.guard) == "x>n")) {
+	// 				return true
+	// 			}
+	// 		} else if strings.Contains(_guard, ">") {
+	// 			if (find_int_element_ispossible(clock, _guard, tem_num) < find_int_element_ispossible(clock, val.guard, tem_num)) || ((find_int_element_ispossible(clock, _guard, tem_num) == find_int_element_ispossible(clock, val.guard, tem_num)) && (get_form(val.guard) == "x>n")) {
+	// 				return true
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// return result
 	result := false
+	guardFound := false
+	var guard string
+
 	for _, label := range edge.FindElements("label") {
 		if label.Attr[0].Value == "guard" {
-			_guard := label.Text()
-
-			if strings.Contains(_guard, "<=") {
-				if find_int_element_ispossible(clock, _guard, tem_num) >= find_int_element_ispossible(clock, val.guard, tem_num) {
-					return true
-				}
-			} else if strings.Contains(_guard, "<") {
-				if (find_int_element_ispossible(clock, _guard, tem_num) > find_int_element_ispossible(clock, val.guard, tem_num)) || ((find_int_element_ispossible(clock, _guard, tem_num) == find_int_element_ispossible(clock, val.guard, tem_num)) && (get_form(val.guard) == "x<n")) {
-					return true
-				}
-			} else if strings.Contains(_guard, "==") {
-				if (find_int_element_ispossible(clock, _guard, tem_num) == find_int_element_ispossible(clock, val.guard, tem_num)) && (get_form(val.guard) == "x>n") {
-					return true
-				}
-			} else if strings.Contains(_guard, ">=") {
-
-				if find_int_element_ispossible(clock, _guard, tem_num) < find_int_element_ispossible(clock, val.guard, tem_num) || ((find_int_element_ispossible(clock, _guard, tem_num) == find_int_element_ispossible(clock, val.guard, tem_num)) && (get_form(val.guard) == "x>n")) {
-					return true
-				}
-			} else if strings.Contains(_guard, ">") {
-				if (find_int_element_ispossible(clock, _guard, tem_num) < find_int_element_ispossible(clock, val.guard, tem_num)) || ((find_int_element_ispossible(clock, _guard, tem_num) == find_int_element_ispossible(clock, val.guard, tem_num)) && (get_form(val.guard) == "x>n")) {
-					return true
-				}
-			}
+			guardFound = true
+			guard = label.Text()
+			break
 		}
 	}
+
+	if !guardFound {
+		return result
+	}
+
+	guardVal := find_int_element_ispossible(clock, guard, tem_num)
+	valGuardVal := find_int_element_ispossible(clock, val.guard, tem_num)
+	valGuardForm := get_form(val.guard)
+
+	if strings.HasPrefix(guard, "<=") {
+		if guardVal >= valGuardVal {
+			result = true
+		}
+	} else if strings.HasPrefix(guard, "<") {
+		if (guardVal > valGuardVal) || ((guardVal == valGuardVal) && (valGuardForm == "x<n")) {
+			result = true
+		}
+	} else if strings.HasPrefix(guard, "==") {
+		if (guardVal == valGuardVal) && (valGuardForm == "x>n") {
+			result = true
+		}
+	} else if strings.HasPrefix(guard, ">=") {
+		if (guardVal < valGuardVal) || ((guardVal == valGuardVal) && (valGuardForm == "x>n")) {
+			result = true
+		}
+	} else if strings.HasPrefix(guard, ">") {
+		if (guardVal < valGuardVal) || ((guardVal == valGuardVal) && (valGuardForm == "x>n")) {
+			result = true
+		}
+	}
+
 	return result
 }
 func check_clock_in_guard(clock [][]string, _guard string, tem_num int) bool {
