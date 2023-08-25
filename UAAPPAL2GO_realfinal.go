@@ -41,7 +41,7 @@ func open_xml(doc *etree.Document) (string, []string, [][][]string, [][]string) 
 	ta_loc_info := make([][][]string, 0)
 	ta_tran_info := make([][]string, 0)
 	for _, e := range doc.FindElements("./nta/*") {
-		fmt.Println(e.Tag)
+		//fmt.Println(e.Tag)
 		if e.Tag == "declaration" {
 			dec = e.Text()
 		}
@@ -53,12 +53,12 @@ func open_xml(doc *etree.Document) (string, []string, [][][]string, [][]string) 
 			for _, l := range e.FindElements("location") {
 				loc_info := make([]string, 0)
 				if l.Attr[0].Key == "id" {
-					fmt.Printf("  template location id : %s\n", l.Attr[0].Value)
+					//fmt.Printf("  template location id : %s\n", l.Attr[0].Value)
 					loc_info = append(loc_info, l.Attr[0].Value)
 				}
 				if l_label := l.SelectElement("label"); l_label != nil {
-					fmt.Printf("  template location label value: %s\n", l_label.Text())
-					fmt.Printf("  template location label kind: %s\n", l_label.Attr[0].Value)
+					//fmt.Printf("  template location label value: %s\n", l_label.Text())
+					//fmt.Printf("  template location label kind: %s\n", l_label.Attr[0].Value)
 					loc_info = append(loc_info, l_label.Text())
 				}
 				template_loc_info = append(template_loc_info, loc_info)
@@ -67,11 +67,11 @@ func open_xml(doc *etree.Document) (string, []string, [][][]string, [][]string) 
 			for _, t := range e.FindElements("transition") {
 				tran_info := make([]string, 6, 6)
 				if t_source := t.SelectElement("source"); t_source != nil {
-					fmt.Printf("  template transition source: %s\n", t_source.Attr[0].Value)
+					//fmt.Printf("  template transition source: %s\n", t_source.Attr[0].Value)
 					tran_info[0] = t_source.Attr[0].Value
 				}
 				if t_target := t.SelectElement("target"); t_target != nil {
-					fmt.Printf("  template transition target: %s\n", t_target.Attr[0].Value)
+					//fmt.Printf("  template transition target: %s\n", t_target.Attr[0].Value)
 					tran_info[1] = t_target.Attr[0].Value
 				}
 				for _, l := range t.FindElements("label") {
@@ -85,12 +85,12 @@ func open_xml(doc *etree.Document) (string, []string, [][][]string, [][]string) 
 						tran_info[5] = l.Text()
 					}
 				}
-				fmt.Println(tran_info)
+				//fmt.Println(tran_info)
 				ta_tran_info = append(ta_tran_info, tran_info)
 			}
 			ta_loc_info = append(ta_loc_info, template_loc_info)
 		}
-		fmt.Println("\n")
+		//fmt.Println("\n")
 	}
 	return dec, tem_dec, ta_loc_info, ta_tran_info
 }
@@ -110,9 +110,9 @@ func ta2tada() {
 		clock[i] = append(clock[i], _clock...)
 	}
 
-	fmt.Println(ta_loc_info)
+	//fmt.Println(ta_loc_info)
 	fmt.Println(ta_tran_info)
-	fmt.Println(clock)
+	//fmt.Println(clock)
 
 	new_doc := doc
 	tem_num := 0
@@ -181,7 +181,7 @@ func ta2tada() {
 					time_flow_edge = append(time_flow_edge, _edge_element)
 					_id = _id + "p"
 					time_flow_loc = append(time_flow_loc, _id)
-					fmt.Println(_origin_guard, (len(Edge_prime_deduplication)-1 == num && _isinvariant) && strings.Contains(_origin_guard, "=="))
+					//fmt.Println(_origin_guard, (len(Edge_prime_deduplication)-1 == num && _isinvariant) && strings.Contains(_origin_guard, "=="))
 					if (len(Edge_prime_deduplication)-1 == num && _isinvariant) && strings.Contains(_origin_guard, "==") {
 						_id = _id[:len(_id)-1]
 						_edge_element = transition_e_prime{_id, "exp", _guard}
