@@ -153,8 +153,14 @@ func ta2tada() {
 				time_flow_loc := make([]string, 0)
 				time_flow_edge := make([]transition_e_prime, 0)
 				tada_flow_edge := make([]tada_transition, 0)
+				time_flow_loc_name := make([]string, 0)
 
 				_id := l.Attr[0].Value
+				_id_name := ""
+				if l_label := l.SelectElement("name"); l_label != nil {
+					_id_name = l_label.Text()
+				}
+
 				_guard := ""
 				Edge_prime_deduplication := deduplication(clock, Edge_prime, tem_num)
 				for num, edge := range Edge_prime_deduplication {
@@ -169,6 +175,7 @@ func ta2tada() {
 					time_flow_edge = append(time_flow_edge, _edge_element)
 					_id = _id + "p"
 					time_flow_loc = append(time_flow_loc, _id)
+					time_flow_loc_name = append(time_flow_loc_name, _id_name)
 
 					for _, label := range edge.FindElements("label") {
 						if label.Attr[0].Value == "guard" {
@@ -181,6 +188,8 @@ func ta2tada() {
 					time_flow_edge = append(time_flow_edge, _edge_element)
 					_id = _id + "p"
 					time_flow_loc = append(time_flow_loc, _id)
+					time_flow_loc_name = append(time_flow_loc_name, _id_name)
+
 					//fmt.Println(_origin_guard, (len(Edge_prime_deduplication)-1 == num && _isinvariant) && strings.Contains(_origin_guard, "=="))
 					if (len(Edge_prime_deduplication)-1 == num && _isinvariant) && strings.Contains(_origin_guard, "==") {
 						_id = _id[:len(_id)-1]
@@ -188,6 +197,7 @@ func ta2tada() {
 						time_flow_edge = time_flow_edge[:len(time_flow_edge)-1]
 						time_flow_edge = append(time_flow_edge, _edge_element)
 						time_flow_loc = time_flow_loc[:len(time_flow_loc)-1]
+						time_flow_loc_name = time_flow_loc_name[:len(time_flow_loc)-1]
 						//fmt.Println(time_flow_loc, _id)
 					} else if len(Edge_prime_deduplication)-1 == num && _isinvariant {
 						_inv := ta_loc_info[tem_num][loc_num][1]
@@ -196,11 +206,17 @@ func ta2tada() {
 						time_flow_edge = append(time_flow_edge, _edge_element)
 					}
 				}
-				for _, val := range time_flow_loc {
+				for loc_num, val := range time_flow_loc {
 					newloc := e.CreateElement("location")
 					newloc.CreateAttr("id", val)
 					newloc.CreateAttr("x", "0")
 					newloc.CreateAttr("y", "0")
+
+					_tran_guard := newloc.CreateElement("name")
+					_tran_guard.CreateAttr("x", "0")
+					_tran_guard.CreateAttr("y", "0")
+					loc_name_num := strconv.Itoa(loc_num + 1)
+					_tran_guard.CreateText(time_flow_loc_name[loc_num] + "_" + loc_name_num)
 				}
 				for _, val := range time_flow_edge {
 					for _, edge := range Edge_prime {
