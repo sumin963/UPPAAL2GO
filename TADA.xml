@@ -25,21 +25,33 @@ urgent chan go[N];
       <name x="192" y="328">Stop</name>
     </location>
     <location id="id2" x="256" y="96">
-      <name x="272" y="80">Cross</name>
+      <name x="0" y="0">Cross_0</name>
     </location>
     <location id="id3" x="96" y="232">
-      <name x="32" y="216">Appr</name>
+      <name x="0" y="0">Appr_0</name>
     </location>
     <location id="id4" x="256" y="232">
-      <name x="272" y="216">Start</name>
+      <name x="0" y="0">Start_0</name>
     </location>
     <location id="exp" x="0" y="0"/>
-    <location id="id2p" x="0" y="0"/>
-    <location id="id2pp" x="0" y="0"/>
-    <location id="id3p" x="0" y="0"/>
-    <location id="id3pp" x="0" y="0"/>
-    <location id="id4p" x="0" y="0"/>
-    <location id="id4pp" x="0" y="0"/>
+    <location id="id2p" x="0" y="0">
+      <name x="0" y="0">Cross_1</name>
+    </location>
+    <location id="id2pp" x="0" y="0">
+      <name x="0" y="0">Cross_2</name>
+    </location>
+    <location id="id3p" x="0" y="0">
+      <name x="0" y="0">Appr_1</name>
+    </location>
+    <location id="id3pp" x="0" y="0">
+      <name x="0" y="0">Appr_2</name>
+    </location>
+    <location id="id4p" x="0" y="0">
+      <name x="0" y="0">Start_1</name>
+    </location>
+    <location id="id4pp" x="0" y="0">
+      <name x="0" y="0">Start_2</name>
+    </location>
     <init ref="id0"/>
     <transition>
       <source ref="id2"/>

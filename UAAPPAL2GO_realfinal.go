@@ -243,7 +243,6 @@ func ta2tada() {
 
 							}
 						}
-
 						if ispossible(val, edge, clock, tem_num) {
 							_edge_element := tada_transition{val.source, _target, _action, _update, _select, _guard}
 							tada_flow_edge = append(tada_flow_edge, _edge_element)
@@ -313,6 +312,25 @@ func ta2tada() {
 
 				time_edge = append(time_edge, time_flow_edge)
 				tada_edge = append(tada_edge, tada_flow_edge)
+			}
+			for loc_id_num, vaa := range time_edge {
+				if len(vaa) > 0 {
+					for _, l := range e.FindElements("location") {
+						if l.Attr[0].Value == "id"+strconv.Itoa(loc_id_num) {
+							if loc_name := l.SelectElement("name"); loc_name != nil {
+								_loc_name := loc_name.Text()
+								l.RemoveChild(loc_name)
+								_tran_guard := l.CreateElement("name")
+								fmt.Println(_loc_name)
+								_tran_guard.CreateAttr("x", "0")
+								_tran_guard.CreateAttr("y", "0")
+								_tran_guard.CreateText(_loc_name + "_0")
+							}
+							break
+						}
+					}
+				}
+
 			}
 
 			if l_init := e.SelectElement("init"); l_init != nil {
@@ -433,33 +451,31 @@ func ispossible(val transition_e_prime, edge *etree.Element, clock [][]string, t
 	if !guardFound {
 		return result
 	}
-
 	guardVal := find_int_element_ispossible(clock, guard, tem_num)
 	valGuardVal := find_int_element_ispossible(clock, val.guard, tem_num)
 	valGuardForm := get_form(val.guard)
 
-	if strings.HasPrefix(guard, "<=") {
+	if strings.Contains(guard, "<=") {
 		if guardVal >= valGuardVal {
 			result = true
 		}
-	} else if strings.HasPrefix(guard, "<") {
-		if (guardVal > valGuardVal) || ((guardVal == valGuardVal) && (valGuardForm == "x<n")) {
+	} else if strings.Contains(guard, "<") {
+		if guardVal > valGuardVal || ((guardVal == valGuardVal) && (valGuardForm == "x<n")) {
 			result = true
 		}
-	} else if strings.HasPrefix(guard, "==") {
+	} else if strings.Contains(guard, "==") { //
 		if (guardVal == valGuardVal) && (valGuardForm == "x>n") {
 			result = true
 		}
-	} else if strings.HasPrefix(guard, ">=") {
+	} else if strings.Contains(guard, ">=") {
 		if (guardVal < valGuardVal) || ((guardVal == valGuardVal) && (valGuardForm == "x>n")) {
 			result = true
 		}
-	} else if strings.HasPrefix(guard, ">") {
+	} else if strings.Contains(guard, ">") { //
 		if (guardVal < valGuardVal) || ((guardVal == valGuardVal) && (valGuardForm == "x>n")) {
 			result = true
 		}
 	}
-
 	return result
 }
 func check_clock_in_guard(clock [][]string, _guard string, tem_num int) bool {
