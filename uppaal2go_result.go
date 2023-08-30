@@ -7,225 +7,217 @@ import (
 	"time"
 )
 
-// #define N 6
+// #define pubsubtime1
+// #define pub_num4
+// #define sub_num1
+// #define sen_num4
+// typedef  int pub;
+// typedef  int sen_pub;
+// typedef  int sub;
+// typedef  int pub_len;
+// #define ctimemincons
+// #define ctimemaxcons
+// #define periodcons
+// #define N 10
 // typedef  int id_t;
-// typedef struct Train{
-// }Train;
-// typedef struct Gate{
-//         id_t list[N+1];
-//         int len;
-// }Gate;
-// void enqueue(Gate *Gate, id_t element)
-// {
-//         Gate->list[Gate-> len++] = element;
-// }
-// void dequeue(Gate *Gate )
-// {
-//         int i = 0;
-//         Gate-> len -= 1;
-//         while (i < Gate-> len)
-//         {
-//                 Gate->list[i] = Gate->list[i + 1];
-//                 i++;
-//         }
-//         Gate->list[i] = 0;
-// }
-// id_t front(Gate *Gate )
-// {
-//    return Gate->list[0];
-// }
-// id_t tail(Gate *Gate )
-// {
-//    return Gate->list[Gate-> len - 1];
-// }
+// #define sen_lenin
+// typedef struct Node{
+// }Node;
+// typedef struct Controller{
+// }Controller;
 //
 import "C"
 
 func main() {
 	eps := time.Millisecond * 10
-	appr_chan := make([]chan bool, C.N)
-	for i := range appr_chan {
-		appr_chan[i] = make(chan bool)
+	queue_chan := make([]chan bool, C.pub)
+	for i := range queue_chan {
+		queue_chan[i] = make(chan bool)
 	}
-	stop_chan := make([]chan bool, C.N)
-	for i := range stop_chan {
-		stop_chan[i] = make(chan bool)
+	sen_queue_chan := make([]chan bool, C.sen_pub)
+	for i := range sen_queue_chan {
+		sen_queue_chan[i] = make(chan bool)
 	}
-	leave_chan := make([]chan bool, C.N)
-	for i := range leave_chan {
-		leave_chan[i] = make(chan bool)
-	}
-	go_chan := make([]chan bool, C.N)
-	for i := range go_chan {
-		go_chan[i] = make(chan bool)
-	}
-	Train := func(id C.id_t) {
+	Node := func(pub_id C.pub) {
 		x_now := time.Now()
 		x := time.Since(x_now)
+		var id0_passage []string
+		var id1_passage []string
 		var id2_passage []string
 		var id3_passage []string
-		var id4_passage []string
+		var id5_passage []string
+		var id6_passage []string
+		var id7_passage []string
+		var id8_passage []string
 	id0:
 		x = time.Since(x_now)
-		fmt.Println("Train", "template", "Safe", "location", "x", ":", x)
+		fmt.Println("Node", "template", "id0", "location", "x", ":", x)
 		select {
-		case appr_chan[id] <- true:
-			x_now = time.Now()
+		case <-time.After(time.Second*0 - sen_len[pub_id] - eps):
 			goto id3
+		case <-time.After(time.Second*0 - sen_len[pub_id]):
+			goto id1
 		}
 	id1:
 		x = time.Since(x_now)
-		fmt.Println("Train", "template", "Stop", "location", "x", ":", x)
+		fmt.Println("Node", "template", "id1", "location", "x", ":", x)
 		select {
-		case <-go_chan[id]:
-			x_now = time.Now()
-			goto id4
+		case <-sen_queue_chan[pub_id]:
+			goto id1
+		case <-time.After(time.Second*0 - x - eps):
+			goto id2
 		}
 	id2:
 		x = time.Since(x_now)
-		fmt.Println("Train", "template", "Cross", "location", "x", ":", x)
-		id2_passage = []string{"x==3", "x>3", "x>5"}
-		switch time_passage(id2_passage, x) {
-		case 0:
-		case 1:
-			goto id2p
-		case 2:
-			goto id2pp
-		case 3:
-			goto exp
-		}
+		fmt.Println("Node", "template", "id2", "location", "x", ":", x)
 		select {
-		case <-time.After(time.Second*3 - x - eps):
-			goto id2p
+		case <-sen_queue_chan[pub_id]:
+			goto id2
+		case <-time.After(time.Second * 0):
+			x_now = time.Now()
+			goto id3
+		case <-time.After(time.Second*0 - x):
+			goto id4
 		}
 	id3:
 		x = time.Since(x_now)
-		fmt.Println("Train", "template", "Appr", "location", "x", ":", x)
-		id3_passage = []string{"x==10", "x>10", "x>20"}
-		switch time_passage(id3_passage, x) {
-		case 0:
-		case 1:
-			goto id3p
-		case 2:
-			goto id3pp
-		case 3:
-			goto exp
-		}
+		fmt.Println("Node", "template", "id3", "location", "x", ":", x)
 		select {
-		case <-time.After(time.Second*10 - x - eps):
-			goto id3p
-		case <-stop_chan[id]:
-			goto id1
+		case <-time.After(time.Second*0 - x - eps):
+			goto id5
 		}
 	id4:
 		x = time.Since(x_now)
-		fmt.Println("Train", "template", "Start", "location", "x", ":", x)
-		id4_passage = []string{"x==7", "x>7", "x>15"}
-		switch time_passage(id4_passage, x) {
-		case 0:
-		case 1:
-			goto id4p
-		case 2:
-			goto id4pp
-		case 3:
-			goto exp
-		}
-		select {
-		case <-time.After(time.Second*7 - x - eps):
-			goto id4p
-		}
-	exp:
-		x = time.Since(x_now)
-		fmt.Println("Train", "template", "exp", "location", "x", ":", x)
+		fmt.Println("Node", "template", "exp", "location", "x", ":", x)
 		select {}
-	id2p:
-		x = time.Since(x_now)
-		fmt.Println("Train", "template", "Cross_2", "location", "x", ":", x)
-		select {
-		case <-time.After(time.Second*3 - x):
-			goto id2pp
-		case leave_chan[id] <- true:
-			goto id0
-		}
-	id2pp:
-		x = time.Since(x_now)
-		fmt.Println("Train", "template", "Cross_3", "location", "x", ":", x)
-		select {
-		case <-time.After(time.Second*5 - x):
-			goto exp
-		case leave_chan[id] <- true:
-			goto id0
-		}
-	id3p:
-		x = time.Since(x_now)
-		fmt.Println("Train", "template", "Appr_2", "location", "x", ":", x)
-		select {
-		case <-time.After(time.Second*10 - x):
-			goto id3pp
-		case <-time.After(time.Second * 0):
-			x_now = time.Now()
-			goto id2
-		case <-stop_chan[id]:
-			goto id1
-		}
-	id3pp:
-		x = time.Since(x_now)
-		fmt.Println("Train", "template", "Appr_3", "location", "x", ":", x)
-		select {
-		case <-time.After(time.Second*20 - x):
-			goto exp
-		case <-time.After(time.Second * 0):
-			x_now = time.Now()
-			goto id2
-		}
-	id4p:
-		x = time.Since(x_now)
-		fmt.Println("Train", "template", "Start_2", "location", "x", ":", x)
-		select {
-		case <-time.After(time.Second*7 - x):
-			goto id4pp
-		case <-time.After(time.Second * 0):
-			x_now = time.Now()
-			goto id2
-		}
-	id4pp:
-		x = time.Since(x_now)
-		fmt.Println("Train", "template", "Start_3", "location", "x", ":", x)
-		select {
-		case <-time.After(time.Second*15 - x):
-			goto exp
-		case <-time.After(time.Second * 0):
-			x_now = time.Now()
-			goto id2
-		}
-	}
-	Gate := func() {
-		local_val := C.Gate{list: [C.N + 1]C.id_t{}, len: 0}
 	id5:
+		x = time.Since(x_now)
+		fmt.Println("Node", "template", "id5", "location", "x", ":", x)
 		select {
-		case stop_chan[C.tail(&local_val)] <- true:
+		case <-time.After(time.Second * 0):
+			goto id9
+		case <-time.After(time.Second*0 - x):
 			goto id6
 		}
 	id6:
+		x = time.Since(x_now)
+		fmt.Println("Node", "template", "id6", "location", "x", ":", x)
 		select {
-		case <-time.After(time.Second * 40):
-			C.enqueue(&local_val, e)
-			goto id5
-		case <-time.After(time.Second * 40):
-			C.dequeue(&local_val)
-			goto id7
+		case <-time.After(time.Second*0 - x):
+			goto id4
+		case <-time.After(time.Second * 0):
+			goto id9
 		}
 	id7:
+		x = time.Since(x_now)
+		fmt.Println("Node", "template", "id7", "location", "x", ":", x)
 		select {
-		case when(local_val.len > 0, go_chan[C.front(&local_val)]) <- true:
-			goto id6
-		case <-time.After(time.Second * 40):
-			C.enqueue(&local_val, e)
-			goto id6
+		case <-time.After(time.Second*0 - t - eps):
+			goto id8
+		}
+	id8:
+		x = time.Since(x_now)
+		fmt.Println("Node", "template", "id8", "location", "x", ":", x)
+		select {
+		case <-time.After(time.Second*0 - t):
+			goto id4
+		case <-time.After(time.Second * 0):
+			C.t = "0"
+			goto id0
+		}
+	id9:
+		x = time.Since(x_now)
+		fmt.Println("Node", "template", "id9", "location", "x", ":", x)
+		select {
+		case queue_chan[pub_id] <- true:
+			goto id7
 		}
 	}
-	go Train()
-	go Gate()
+	Controller := func() {
+		var id10_passage []string
+		var id12_passage []string
+		var id13_passage []string
+		var id15_passage []string
+		var id16_passage []string
+		var id17_passage []string
+		var id18_passage []string
+		var id19_passage []string
+	id10:
+		select {
+		case <-time.After(time.Second*0 - t):
+			goto id11
+		case <-time.After(time.Second * 0):
+			C.t = "0"
+			goto id13
+		}
+	id11:
+		select {}
+	id12:
+		select {
+		case <-time.After(time.Second*0 - x):
+			goto id11
+		case <-time.After(time.Second * 0):
+			goto id14
+		}
+	id13:
+		select {
+		case <-time.After(time.Second*0 - sen_len[3] - eps):
+			goto id17
+		case <-time.After(time.Second*0 - sen_len[3]):
+			goto id19
+		}
+	id14:
+		select {
+		case sen_queue_chan[3] <- true:
+			goto id16
+		}
+	id15:
+		select {
+		case <-time.After(time.Second * 0):
+			goto id14
+		case <-time.After(time.Second*0 - x):
+			goto id12
+		}
+	id16:
+		select {
+		case <-time.After(time.Second*0 - t - eps):
+			goto id10
+		}
+	id17:
+		select {
+		case <-time.After(time.Second*0 - x - eps):
+			goto id15
+		}
+	id18:
+		select {
+		case <-queue_chan[0]:
+			goto id18
+		case <-queue_chan[2]:
+			goto id18
+		case <-queue_chan[1]:
+			goto id18
+		case <-time.After(time.Second * 0):
+			C.x = "0"
+			goto id17
+		case <-time.After(time.Second*0 - x):
+			goto id11
+		}
+	id19:
+		select {
+		case <-queue_chan[2]:
+			goto id19
+		case <-queue_chan[0]:
+			goto id19
+		case <-queue_chan[1]:
+			goto id19
+		case <-time.After(time.Second*0 - x - eps):
+			goto id18
+		}
+	}
+	go lp()
+	go gp()
+	go od()
+	go cr()
 	<-time.After(time.Second * 20)
 }
 func when(guard bool, channel chan bool) chan bool {

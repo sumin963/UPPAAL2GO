@@ -7,10 +7,10 @@ import (
 	"time"
 )
 
-// #define pubsubtime1
-// #define pub_num4
-// #define sub_num1
-// #define sen_num4
+// #define pubsubtime 1
+// #define pub_num 4
+// #define sub_num 1
+// #define sen_num 4
 // typedef  int pub;
 // typedef  int sen_pub;
 // typedef  int sub;
@@ -20,6 +20,7 @@ import (
 // #define periodcons
 // #define N 10
 // typedef  int id_t;
+// #define sen_len
 // typedef struct Node{
 // }Node;
 // typedef struct Controller{

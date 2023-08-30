@@ -14,7 +14,7 @@ import (
 )
 
 // 입력할 xml파일 경로
-var input_xml = "C:\\Users\\jsm96\\gitfolder\\UPPAAL2GO\\TADA.xml"
+var input_xml = "C:\\Users\\jsm96\\gitfolder\\UPPAAL2GO\\av_algo_tada.xml"
 
 var path = "lexer_input.txt"
 var dec_path = "cgo_input.txt"
@@ -64,13 +64,14 @@ func main() {
 
 	//처음 xml에서 받아온 tem_name을 이용하여  이전 함수를 통해 얻은 paser 결과를 후처리
 	cgo_dec := after_treatment(tem_name)
-	//fmt.Println(cgo_dec)
+	fmt.Println(cgo_dec)
 
 	//xml에서 얻은 data를 통해 transition을 source location을 공유하는 trasition별로 분류하고 guard의 시간의 흐름에따라 정렬
 	srt_trans := sort_tada_trans(xml_loc, xml_transition)
 	//fmt.Println(srt_trans)
 
 	make_srt_trans := sort_make_tada_trans(xml_loc, xml_transition)
+	//fmt.Println(make_srt_trans)
 	//fmt.Println(make_srt_trans)
 
 	//지금 까지 정리한 data들을 통해 golang 코드 생성
@@ -87,6 +88,7 @@ func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]
 	f.Func().Id("main").Params().BlockFunc(func(g *Group) {
 		g.Id("eps").Op(":=").Qual("time", "Millisecond").Op("*").Lit(10)
 
+		//채널 선언
 		for _, val := range channel_tada {
 			g.Id(val[1] + "_chan").Op(":=").Do(func(s *Statement) {
 				if strings.Contains(val[0], "[") {
@@ -140,22 +142,25 @@ func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]
 								if strings.Contains(v[0], "[") {
 									slice_name, slice_len := slice_make_C(v[0])
 									slice_len_val, _ := strconv.Atoi(slice_len)
-									if slice_len_val == 0 {
+									//fmt.Println(slice_len)  //slice_len = N+1
+									if slice_len_val == 0 { // 인덱스 []사이의 값이 문자일때
 										slice_op_index := strings.Index(slice_len, "+")
-										if slice_op_index == 0 {
+
+										// 여기서 문제 현재상황에서 N값에 접근할수 없음.
+										if slice_op_index == 0 { // 인덱스 값이 하나의 변수일때
 											l.Id(v[1]).Op(":").Id(slice_name).ValuesFunc(func(block *Group) {
 												for o := 0; o < slice_len_val; o++ { //수정
 													block.Lit(0)
 												}
 											})
-										} else { //수정
+										} else { // 인덱스 값에 +가 포함될때
 											l.Id(v[1]).Op(":").Id(slice_name).ValuesFunc(func(block *Group) {
 												for o := 0; o < slice_len_val; o++ {
 													block.Lit(0)
 												}
 											})
 										}
-									} else {
+									} else { // 인덱스 []사이의 값이 숫자일때
 										l.Id(v[1]).Op(":").Id(slice_name).ValuesFunc(func(block *Group) {
 											for o := 0; o < slice_len_val; o++ {
 												block.Lit(0)
@@ -183,6 +188,8 @@ func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]
 				for _, element_time_passge := range defind_time_passge {
 					t.Var().Id(element_time_passge + "_passage").Index().String()
 				}
+
+				//location 선언
 				for j, val_loc := range tada_loc[i] {
 					t.Id(val_loc.id).Op(":")
 					for clock_name_index, clock_name := range clock_tada[i+1] {
@@ -195,7 +202,7 @@ func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]
 							}
 						}
 					}
-					//여기서부터
+					//location time passage
 					time_passge, time_passage_target := make_time_passge(make_srt_trans[i][j])
 					if len(time_passge) > 2 {
 						t.Id(val_loc.id + "_passage").Op("=").Index().String().ValuesFunc(func(q *Group) {
@@ -213,12 +220,11 @@ func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]
 							}
 						})
 					}
+					//location selcet
 					t.Select().BlockFunc(func(s *Group) {
 						for _, trans_val := range srt_trans[i][j] {
-							//fmt.Println(trans_val)
 							transition_case := make_trans(trans_val.selects, trans_val.guard, trans_val.sync, clock_id, param_id)
 							make_update := make_update(trans_val.assign, param_id, clock_id)
-
 							for _, t_case := range transition_case {
 								s.Case(
 									t_case,
@@ -228,7 +234,6 @@ func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]
 									}
 									q.Goto().Id(trans_val.target)
 								})
-
 							}
 						}
 					})
@@ -869,7 +874,7 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 				_mappintstring = _mappintstring[:len(_mappintstring)-1]
 				_, err := output_file.Write([]byte(_mappintstring + "\n"))
 				check(err)
-				//fmt.Println(_mappintstring)
+				fmt.Println(mapping(parse_lexr_data, input_file_reader, i, _ident), mapping(parse_lexr_data, input_file_reader, i, _int)) //문제@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 				//fmt.Println("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + " " + mapping(parse_lexr_data, input_file_reader, i, _int))
 			} else {
 				if parse[i][0] == TYPEID && parse_lexr_data[i][0][2] == "int" {

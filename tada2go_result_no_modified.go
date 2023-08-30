@@ -83,7 +83,7 @@ func main() {
 		}
 	id2:
 		x = time.Since(x_now)
-		fmt.Println("Train", "template", "Cross", "location", "x", ":", x)
+		fmt.Println("Train", "template", "Cross_0", "location", "x", ":", x)
 		id2_passage = []string{"x==3", "x>3", "x>5"}
 		switch time_passage(id2_passage, x) {
 		case 0:
@@ -100,7 +100,7 @@ func main() {
 		}
 	id3:
 		x = time.Since(x_now)
-		fmt.Println("Train", "template", "Appr", "location", "x", ":", x)
+		fmt.Println("Train", "template", "Appr_0", "location", "x", ":", x)
 		id3_passage = []string{"x==10", "x>10", "x>20"}
 		switch time_passage(id3_passage, x) {
 		case 0:
@@ -119,7 +119,7 @@ func main() {
 		}
 	id4:
 		x = time.Since(x_now)
-		fmt.Println("Train", "template", "Start", "location", "x", ":", x)
+		fmt.Println("Train", "template", "Start_0", "location", "x", ":", x)
 		id4_passage = []string{"x==7", "x>7", "x>15"}
 		switch time_passage(id4_passage, x) {
 		case 0:
@@ -140,7 +140,7 @@ func main() {
 		select {}
 	id2p:
 		x = time.Since(x_now)
-		fmt.Println("Train", "template", "id2p", "location", "x", ":", x)
+		fmt.Println("Train", "template", "Cross_1", "location", "x", ":", x)
 		select {
 		case <-time.After(time.Second*3 - x):
 			goto id2pp
@@ -149,7 +149,7 @@ func main() {
 		}
 	id2pp:
 		x = time.Since(x_now)
-		fmt.Println("Train", "template", "id2pp", "location", "x", ":", x)
+		fmt.Println("Train", "template", "Cross_2", "location", "x", ":", x)
 		select {
 		case <-time.After(time.Second*5 - x):
 			goto exp
@@ -158,7 +158,7 @@ func main() {
 		}
 	id3p:
 		x = time.Since(x_now)
-		fmt.Println("Train", "template", "id3p", "location", "x", ":", x)
+		fmt.Println("Train", "template", "Appr_1", "location", "x", ":", x)
 		select {
 		case <-time.After(time.Second*10 - x):
 			goto id3pp
@@ -170,7 +170,7 @@ func main() {
 		}
 	id3pp:
 		x = time.Since(x_now)
-		fmt.Println("Train", "template", "id3pp", "location", "x", ":", x)
+		fmt.Println("Train", "template", "Appr_2", "location", "x", ":", x)
 		select {
 		case <-time.After(time.Second*20 - x):
 			goto exp
@@ -180,7 +180,7 @@ func main() {
 		}
 	id4p:
 		x = time.Since(x_now)
-		fmt.Println("Train", "template", "id4p", "location", "x", ":", x)
+		fmt.Println("Train", "template", "Start_1", "location", "x", ":", x)
 		select {
 		case <-time.After(time.Second*7 - x):
 			goto id4pp
@@ -190,7 +190,7 @@ func main() {
 		}
 	id4pp:
 		x = time.Since(x_now)
-		fmt.Println("Train", "template", "id4pp", "location", "x", ":", x)
+		fmt.Println("Train", "template", "Start_2", "location", "x", ":", x)
 		select {
 		case <-time.After(time.Second*15 - x):
 			goto exp
@@ -200,7 +200,7 @@ func main() {
 		}
 	}
 	Gate := func() {
-		local_val := C.Gate{list: 0, len: 0}
+		local_val := C.Gate{list: [C.N + 1]C.id_t{}, len: 0}
 	id5:
 		select {
 		case stop_chan[C.tail(&local_val)] <- true:
@@ -211,6 +211,7 @@ func main() {
 		case <-time.After(time.Second * 40):
 			C.enqueue(&local_val, e)
 			goto id5
+
 		case <-time.After(time.Second * 40):
 			C.dequeue(&local_val)
 			goto id7
@@ -224,7 +225,7 @@ func main() {
 			goto id6
 		}
 	}
-	go Train()
+	go Train(0)
 	go Gate()
 	<-time.After(time.Second * 20)
 }
