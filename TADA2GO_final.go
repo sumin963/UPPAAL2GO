@@ -29,7 +29,7 @@ func main() {
 	//TADA의 정보가 담긴 xml 파일의 내용을 etree에 삽입
 	//input : doc  //xml파일
 	//output : xml_loc - location data, xml_transition - transition data, xml_dec - dec data, xml_tem - tem data
-	xml_loc, xml_transition, xml_dec, xml_tem := input_xml_to_slice(doc)
+	xml_loc, xml_transition, xml_dec, xml_tem, init_loc := input_xml_to_slice(doc)
 	dec := xml_dec[0]
 	sys_dec := xml_dec[1]
 	tem_dec := xml_tem[0]
@@ -74,10 +74,10 @@ func main() {
 
 	tada_timepassage := define_tada_timepassage(xml_loc, xml_transition)
 	//지금 까지 정리한 data들을 통해 golang 코드 생성
-	code_generator(syntax, syntax_lex_data, cgo_dec, make_srt_trans, tem_name, xml_loc, srt_trans, tada_timepassage)
+	code_generator(syntax, syntax_lex_data, cgo_dec, make_srt_trans, tem_name, xml_loc, srt_trans, tada_timepassage, init_loc)
 }
 
-func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]byte, make_srt_trans [][][]TADA_transition, tem_name []string, tada_loc [][]TADA_loc, srt_trans [][][]TADA_transition, tada_timepassage [][][]string) {
+func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]byte, make_srt_trans [][][]TADA_transition, tem_name []string, tada_loc [][]TADA_loc, srt_trans [][][]TADA_transition, tada_timepassage [][][]string, init_loc []string) {
 
 	tem_val, channel_tada, clock_tada, param_tada, sys_tada := map_token_2_c(syntax, syntax_lex_data)
 	f := NewFilePathName("/uppaal2go_result.go", "main")
@@ -192,6 +192,8 @@ func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]
 						t.Var().Id(element_time_passge[0] + "_passage").Index().String()
 					}
 				}
+
+				t.Goto().Id(init_loc[i])
 
 				//location 선언
 				for j, val_loc := range tada_loc[i] {
@@ -733,6 +735,7 @@ func after_treatment(tem_name []string) [][]byte {
 	reader := bufio.NewReader(input_file)
 	input_file_reader := make([][]byte, 0)
 	output_file := make([][]byte, 0)
+
 	for {
 		line, _, err := reader.ReadLine()
 		input_file_reader = append(input_file_reader, line)
@@ -939,7 +942,7 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 					_, err := output_file.Write([]byte(_mappintstring + "\n"))
 					check(err)
 				} else {
-					_mappintstring := "const" + " " + mapping(parse_lexr_data, input_file_reader, i, _type) + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + " = " + mapping(parse_lexr_data, input_file_reader, i, _int) + ";"
+					_mappintstring := "#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + " " + mapping(parse_lexr_data, input_file_reader, i, _int)
 					_mappintstring = strings.Trim(_mappintstring, " ")
 					_mappintstring = _mappintstring[:len(_mappintstring)-1]
 					_, err := output_file.Write([]byte(_mappintstring + "\n"))
@@ -1516,6 +1519,7 @@ func Lexer_TADA() ([][]string, []Token) {
 		lexer_token_data = append(lexer_token_data, tok)
 		//fmt.Printf("%d:%d\t%s\t%s\n", pos.line, pos.column, tok, lit)
 	}
+	file.Close()
 	return lexer_data, lexer_token_data
 }
 
@@ -1599,7 +1603,7 @@ type TADA_tem struct {
 	tans TADA_transition
 }
 
-func input_xml_to_slice(doc *etree.Document) ([][]TADA_loc, [][]TADA_transition, []string, [][]string) {
+func input_xml_to_slice(doc *etree.Document) ([][]TADA_loc, [][]TADA_transition, []string, [][]string, []string) {
 	tada_loc := make([][]TADA_loc, 0)
 	tada_trans := make([][]TADA_transition, 0)
 	var dec string
@@ -1607,6 +1611,7 @@ func input_xml_to_slice(doc *etree.Document) ([][]TADA_loc, [][]TADA_transition,
 	var tem_name []string
 	var tem_param []string
 	var sys_dec string
+	var init_loc []string
 	for _, e := range doc.FindElements("./nta/*") {
 		if e.Tag == "declaration" {
 			dec = e.Text()
@@ -1637,6 +1642,9 @@ func input_xml_to_slice(doc *etree.Document) ([][]TADA_loc, [][]TADA_transition,
 					_name = l_name.Text()
 				}
 				_tada_loc = append(_tada_loc, TADA_loc{_id, _name})
+			}
+			if init := e.SelectElement("init"); init != nil {
+				init_loc = append(init_loc, init.Attr[0].Value)
 			}
 			tada_loc = append(tada_loc, _tada_loc)
 
@@ -1679,7 +1687,7 @@ func input_xml_to_slice(doc *etree.Document) ([][]TADA_loc, [][]TADA_transition,
 	return_val_dec = append(return_val_dec, dec, sys_dec)
 	return_val_tem := make([][]string, 0)
 	return_val_tem = append(return_val_tem, tem_dec, tem_name, tem_param)
-	return tada_loc, tada_trans, return_val_dec, return_val_tem
+	return tada_loc, tada_trans, return_val_dec, return_val_tem, init_loc
 }
 
 func string_comment_del(dec string) string {

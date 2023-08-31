@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// const int  N  = 6;
+// #define N  6
 // typedef  int id_t;
 // typedef struct Train{
 // }Train;
@@ -65,6 +65,7 @@ func main() {
 		var id2_passage []string
 		var id3_passage []string
 		var id4_passage []string
+		goto id0
 	id0:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "Safe", "location", "x", ":", x)
@@ -201,6 +202,7 @@ func main() {
 	}
 	Gate := func() {
 		local_val := C.Gate{list: [C.N + 1]C.id_t{}, len: 0}
+		goto id7
 	id5:
 		select {
 		case stop_chan[C.tail(&local_val)] <- true:
