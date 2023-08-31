@@ -864,27 +864,90 @@ func map_token_2_c(parse [][]Token, parse_lexr_data [][][]string) ([][][]string,
 				}
 			}
 
-		} else if contains(_parse, ASSIGN) { //initializer
-			//fmt.Println("aaaaa", _parse, parse_lexr_data[i][0][2])
+		} else if contains(_parse, ASSIGN) { //initializer								const int ctimemax[4] =  {1,1,1,1};
 			if parse[i][0] == PREFIX && parse_lexr_data[i][0][2] == "const" { //const int N = 6;		#define N 6
 				_ident := contain_index(parse[i], IDENT)
 				_int := contain_index(parse[i], INT)
-				_mappintstring := "#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + mapping(parse_lexr_data, input_file_reader, i, _int)
-				_mappintstring = strings.Trim(_mappintstring, " ")
-				_mappintstring = _mappintstring[:len(_mappintstring)-1]
-				_, err := output_file.Write([]byte(_mappintstring + "\n"))
-				check(err)
-				fmt.Println(mapping(parse_lexr_data, input_file_reader, i, _ident), mapping(parse_lexr_data, input_file_reader, i, _int)) //문제@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-				//fmt.Println("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + " " + mapping(parse_lexr_data, input_file_reader, i, _int))
-			} else {
-				if parse[i][0] == TYPEID && parse_lexr_data[i][0][2] == "int" {
-					_ident := contain_index(parse[i], IDENT)
-					_int := contain_index(parse[i], INT)
-					_mappintstring := "#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + mapping(parse_lexr_data, input_file_reader, i, _int)
+				_type := contain_index(parse[i], TYPEID)
+				_state := 0
+				for _, val_parse := range parse[i] {
+					if val_parse == LBRACKET {
+						_state = 1
+					}
+					if val_parse == LBRACE {
+						_state = 2
+					}
+				}
+				if _state == 1 {
+					_lbracket := contain_index(parse[i], LBRACKET)
+					_rbracket := contain_index(parse[i], RBRACKET)
+					_mappintstring := "const" + " " + mapping(parse_lexr_data, input_file_reader, i, _type) + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + mapping(parse_lexr_data, input_file_reader, i, _lbracket) + mapping(parse_lexr_data, input_file_reader, i, _rbracket) + ";"
 					_mappintstring = strings.Trim(_mappintstring, " ")
 					_mappintstring = _mappintstring[:len(_mappintstring)-1]
 					_, err := output_file.Write([]byte(_mappintstring + "\n"))
 					check(err)
+				} else if _state == 2 {
+					_lbrace := contain_index(parse[i], LBRACE)
+					_rbrace := contain_index(parse[i], RBRACE)
+
+					_lbracket := contain_index(parse[i], LBRACKET)
+					_rbracket := contain_index(parse[i], RBRACKET)
+					_mappintstring := "const" + " " + mapping(parse_lexr_data, input_file_reader, i, _type) + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + mapping(parse_lexr_data, input_file_reader, i, _lbracket) + mapping(parse_lexr_data, input_file_reader, i, _rbracket) + " = " + mapping(parse_lexr_data, input_file_reader, i, _lbrace) + mapping(parse_lexr_data, input_file_reader, i, _rbrace) + ";" //수정
+					_mappintstring = strings.Trim(_mappintstring, " ")
+					_mappintstring = _mappintstring[:len(_mappintstring)-1]
+					_, err := output_file.Write([]byte(_mappintstring + "\n"))
+					check(err)
+				} else {
+					_mappintstring := "const" + " " + mapping(parse_lexr_data, input_file_reader, i, _type) + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + " = " + mapping(parse_lexr_data, input_file_reader, i, _int) + ";"
+					_mappintstring = strings.Trim(_mappintstring, " ")
+					_mappintstring = _mappintstring[:len(_mappintstring)-1]
+					_, err := output_file.Write([]byte(_mappintstring + "\n"))
+					check(err)
+					//fmt.Println(mapping(parse_lexr_data, input_file_reader, i, _ident), mapping(parse_lexr_data, input_file_reader, i, _int)) //문제@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+					//fmt.Println("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + " " + mapping(parse_lexr_data, input_file_reader, i, _int))
+				}
+
+			} else {
+				if parse[i][0] == TYPEID && parse_lexr_data[i][0][2] == "int" {
+					_ident := contain_index(parse[i], IDENT)
+					_type := contain_index(parse[i], TYPEID)
+					_state := 0
+					for _, val_parse := range parse[i] {
+						if val_parse == LBRACKET {
+							_state = 1
+						}
+						if val_parse == LBRACE {
+							_state = 2
+						}
+					}
+					if _state == 1 {
+						_lbracket := contain_index(parse[i], LBRACKET)
+						_rbracket := contain_index(parse[i], RBRACKET)
+						_mappintstring := "int " + mapping(parse_lexr_data, input_file_reader, i, _type) + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + mapping(parse_lexr_data, input_file_reader, i, _lbracket) + mapping(parse_lexr_data, input_file_reader, i, _rbracket) + ";"
+						_mappintstring = strings.Trim(_mappintstring, " ")
+						_mappintstring = _mappintstring[:len(_mappintstring)-1]
+						_, err := output_file.Write([]byte(_mappintstring + "\n"))
+						check(err)
+					} else if _state == 2 {
+						_lbrace := contain_index(parse[i], LBRACE)
+						_rbrace := contain_index(parse[i], RBRACE)
+
+						_lbracket := contain_index(parse[i], LBRACKET)
+						_rbracket := contain_index(parse[i], RBRACKET)
+						_mappintstring := "int " + mapping(parse_lexr_data, input_file_reader, i, _ident) + mapping(parse_lexr_data, input_file_reader, i, _lbracket) + mapping(parse_lexr_data, input_file_reader, i, _rbracket) + " = " + mapping(parse_lexr_data, input_file_reader, i, _lbrace) + mapping(parse_lexr_data, input_file_reader, i, _rbrace) + ";" //수정
+						_mappintstring = strings.Trim(_mappintstring, " ")
+						_mappintstring = _mappintstring[:len(_mappintstring)-1]
+						_, err := output_file.Write([]byte(_mappintstring + "\n"))
+						check(err)
+					} else {
+						_int := contain_index(parse[i], INT)
+						_mappintstring := "int" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + mapping(parse_lexr_data, input_file_reader, i, _int)
+						_mappintstring = strings.Trim(_mappintstring, " ")
+						_mappintstring = _mappintstring[:len(_mappintstring)-1]
+						_, err := output_file.Write([]byte(_mappintstring + "\n"))
+						check(err)
+					}
+
 					//fmt.Println(_mappintstring)
 					//fmt.Println("#define" + " " + mapping(parse_lexr_data, input_file_reader, i, _ident) + " " + mapping(parse_lexr_data, input_file_reader, i, _int))
 

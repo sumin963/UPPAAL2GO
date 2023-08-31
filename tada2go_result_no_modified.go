@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// #define ctimemax {1,1,1,1}
 // #define N 6
 // typedef  int id_t;
 // typedef struct Train{

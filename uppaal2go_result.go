@@ -7,20 +7,20 @@ import (
 	"time"
 )
 
-// #define pubsubtime1
-// #define pub_num4
-// #define sub_num1
-// #define sen_num4
+// const int  pubsubtime = 1;
+// const int  pub_num = 4;
+// const int  sub_num = 1;
+// const int  sen_num = 4;
 // typedef  int pub;
 // typedef  int sen_pub;
 // typedef  int sub;
 // typedef  int pub_len;
-// #define ctimemincons
-// #define ctimemaxcons
-// #define periodcons
-// #define N 10
+// const int  ctimemin[pub] = {1,1,1,1};
+// const int  ctimemax[pub] = {3,3,3,2};
+// const int  period[pub] = {20,20,20,20};
+// const int  N  = 10;
 // typedef  int id_t;
-// #define sen_lenin
+// int sen_len[0]  = {0,0,0,0};
 // typedef struct Node{
 // }Node;
 // typedef struct Controller{

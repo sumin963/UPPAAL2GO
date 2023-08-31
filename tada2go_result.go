@@ -2,7 +2,9 @@ package main
 
 /*
 //global dec
-#define N 6					//;
+#define N 6
+const int ctimemax[4] =  {1,1,1,1};
+
 typedef  int id_t;
 typedef struct Train{
 } Train;
