@@ -68,17 +68,16 @@ func main() {
 
 	//xml에서 얻은 data를 통해 transition을 source location을 공유하는 trasition별로 분류하고 guard의 시간의 흐름에따라 정렬
 	srt_trans := sort_tada_trans(xml_loc, xml_transition)
-	//fmt.Println(srt_trans)
 
+	//location별로 분류된 데이터에 guard의 시간의 흐름에따라 정렬
 	make_srt_trans := sort_make_tada_trans(xml_loc, xml_transition)
-	//fmt.Println(make_srt_trans)
-	//fmt.Println(make_srt_trans)
 
+	tada_timepassage := define_tada_timepassage(xml_loc, xml_transition)
 	//지금 까지 정리한 data들을 통해 golang 코드 생성
-	code_generator(syntax, syntax_lex_data, cgo_dec, make_srt_trans, tem_name, xml_loc, srt_trans)
+	code_generator(syntax, syntax_lex_data, cgo_dec, make_srt_trans, tem_name, xml_loc, srt_trans, tada_timepassage)
 }
 
-func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]byte, make_srt_trans [][][]TADA_transition, tem_name []string, tada_loc [][]TADA_loc, srt_trans [][][]TADA_transition) {
+func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]byte, make_srt_trans [][][]TADA_transition, tem_name []string, tada_loc [][]TADA_loc, srt_trans [][][]TADA_transition, tada_timepassage [][][]string) {
 
 	tem_val, channel_tada, clock_tada, param_tada, sys_tada := map_token_2_c(syntax, syntax_lex_data)
 	f := NewFilePathName("/uppaal2go_result.go", "main")
@@ -184,9 +183,14 @@ func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]
 					}
 				}
 				//time_passage 선언
-				defind_time_passge := defind_time_passge(make_srt_trans[i])
-				for _, element_time_passge := range defind_time_passge {
-					t.Var().Id(element_time_passge + "_passage").Index().String()
+				// defind_time_passge := defind_time_passge(make_srt_trans[i])
+				// for _, element_time_passge := range defind_time_passge {
+				// 	t.Var().Id(element_time_passge + "_passage").Index().String()
+				// }
+				for _, element_time_passge := range tada_timepassage[i] {
+					if len(element_time_passge) > 0 {
+						t.Var().Id(element_time_passge[0] + "_passage").Index().String()
+					}
 				}
 
 				//location 선언
@@ -321,6 +325,24 @@ func make_time_passge(transition []TADA_transition) ([]string, []string) {
 		}
 	}
 	return rst, rst_target
+}
+
+func define_tada_timepassage(loc [][]TADA_loc, transition [][]TADA_transition) [][][]string {
+	var rst_loc [][][]string
+	for _, tem_loc := range loc {
+		_tem_loc := make([][]string, 0)
+		for _, info_loc := range tem_loc {
+			_info_loc := make([]string, 0)
+			if strings.Contains(info_loc.name, "_0") {
+				//_info_loc = append(_info_loc, info_loc.id, info_loc.name[:len(info_loc.name)-2])
+				_info_loc = append(_info_loc, info_loc.id, info_loc.name[:len(info_loc.name)-2])
+			}
+			_tem_loc = append(_tem_loc, _info_loc)
+		}
+		rst_loc = append(rst_loc, _tem_loc)
+	}
+	return rst_loc
+
 }
 func defind_time_passge(transition [][]TADA_transition) []string {
 	var rst_source []string
@@ -640,9 +662,9 @@ func check_clock(id string, clock []string) bool {
 }
 func sort_make_tada_trans(loc [][]TADA_loc, trans [][]TADA_transition) [][][]TADA_transition {
 	srt_data := make([][][]TADA_transition, 0)
-	for i, tem := range loc {
+	for i, tem := range loc { //tem
 		_srt_data := make([][]TADA_transition, 0)
-		for _, val := range tem {
+		for _, val := range tem { //location
 			_trnas := make([]TADA_transition, 0)
 			if !strings.Contains(val.id, "p") {
 				for _, trans_q := range trans[i] {
@@ -654,6 +676,24 @@ func sort_make_tada_trans(loc [][]TADA_loc, trans [][]TADA_transition) [][][]TAD
 				}
 			}
 
+			_srt_data = append(_srt_data, _trnas)
+		}
+		srt_data = append(srt_data, _srt_data)
+	}
+
+	return srt_data
+}
+func sort_tada_tran(loc [][]TADA_loc, trans [][]TADA_transition) [][][]TADA_transition {
+	srt_data := make([][][]TADA_transition, 0)
+	for i, tem := range loc {
+		_srt_data := make([][]TADA_transition, 0)
+		for _, val := range tem {
+			_trnas := make([]TADA_transition, 0)
+			for _, trans_q := range trans[i] {
+				if trans_q.source == val.id {
+					_trnas = append(_trnas, trans_q)
+				}
+			}
 			_srt_data = append(_srt_data, _trnas)
 		}
 		srt_data = append(srt_data, _srt_data)
@@ -675,6 +715,7 @@ func sort_tada_trans(loc [][]TADA_loc, trans [][]TADA_transition) [][][]TADA_tra
 		}
 		srt_data = append(srt_data, _srt_data)
 	}
+
 	return srt_data
 }
 func make_chan(name string, isMap bool) *Statement {

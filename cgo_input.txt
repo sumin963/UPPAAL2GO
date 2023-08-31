@@ -1,16 +1,29 @@
-const int  pubsubtime = 1;
-const int  pub_num = 4;
-const int  sub_num = 1;
-const int  sen_num = 4;
-typedef  int pub;
-typedef  int sen_pub;
-typedef  int sub;
-typedef  int pub_len;
-const int  ctimemin[pub] = {1,1,1,1};
-const int  ctimemax[pub] = {3,3,3,2};
-const int  period[pub] = {20,20,20,20};
-const int  N  = 10;
+const int  N  = 6;         
 typedef  int id_t;
-int sen_len[0]  = {0,0,0,0};
-typedef struct Node{
-typedef struct Controller{
+typedef struct Train{
+typedef struct Gate{
+        id_t list[N+1];
+        int len;
+void enqueue(Gate *Gate, id_t element)
+{
+        Gate->list[Gate-> len++] = element;
+}
+void dequeue(Gate *Gate )
+{
+        int i = 0;
+        Gate-> len -= 1;
+        while (i < Gate-> len)
+        {
+                Gate->list[i] = Gate->list[i + 1];
+                i++;
+        }
+        Gate->list[i] = 0;
+}
+id_t front(Gate *Gate )
+{
+   return Gate->list[0];
+}
+id_t tail(Gate *Gate )
+{
+   return Gate->list[Gate-> len - 1];
+}
