@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// #define N 6
+// #define N  6
 // typedef  int id_t;
 // typedef struct Train{
 // }Train;
@@ -65,6 +65,7 @@ func main() {
 		var id2_passage []string
 		var id3_passage []string
 		var id4_passage []string
+		goto id0
 	id0:
 		x = time.Since(x_now)
 		fmt.Println("Train", "template", "Safe", "location", "x", ":", x)
@@ -201,14 +202,7 @@ func main() {
 	}
 	Gate := func() {
 		local_val := C.Gate{list: [C.N + 1]C.id_t{}, len: 0}
-	id7:
-		select {
-		case when(local_val.len > 0, go_chan[C.front(&local_val)]) <- true:
-			goto id6
-		case <-time.After(time.Second * 40):
-			C.enqueue(&local_val, 0)
-			goto id6
-		}
+		goto id7
 	id5:
 		select {
 		case stop_chan[C.tail(&local_val)] <- true:
@@ -217,14 +211,22 @@ func main() {
 	id6:
 		select {
 		case <-time.After(time.Second * 40):
-			C.enqueue(&local_val, 0)
+			C.enqueue(&local_val, e)
 			goto id5
 		case <-time.After(time.Second * 40):
 			C.dequeue(&local_val)
 			goto id7
 		}
+	id7:
+		select {
+		case when(local_val.len > 0, go_chan[C.front(&local_val)]) <- true:
+			goto id6
+		case <-time.After(time.Second * 40):
+			C.enqueue(&local_val, e)
+			goto id6
+		}
 	}
-	go Train(0)
+	go Train()
 	go Gate()
 	<-time.After(time.Second * 20)
 }

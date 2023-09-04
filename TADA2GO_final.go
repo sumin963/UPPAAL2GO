@@ -71,8 +71,8 @@ func main() {
 
 	//location별로 분류된 데이터에 guard의 시간의 흐름에따라 정렬
 	make_srt_trans := sort_make_tada_trans(xml_loc, xml_transition)
-
 	tada_timepassage := define_tada_timepassage(xml_loc, xml_transition)
+
 	//지금 까지 정리한 data들을 통해 golang 코드 생성
 	code_generator(syntax, syntax_lex_data, cgo_dec, make_srt_trans, tem_name, xml_loc, srt_trans, tada_timepassage, init_loc)
 }
@@ -1335,8 +1335,6 @@ func NewLexer(reader io.Reader) *Lexer { //하나의 토큰을 반환하는 함�
 	}
 }
 
-// Lex scans the input for the next token. It returns the position of the token,
-// the token's type, and the literal value.
 func (l *Lexer) Lex() (Position, Token, string) {
 	// keep looping until we return a token
 	for {
@@ -1346,12 +1344,9 @@ func (l *Lexer) Lex() (Position, Token, string) {
 				return l.pos, EOF, ""
 			}
 
-			// at this point there isn't much we can do, and the compiler
-			// should just return the raw error to the user
 			panic(err)
 		}
 
-		// update the column to the position of the newly read in rune
 		l.pos.column++
 
 		switch r {
@@ -1387,9 +1382,8 @@ func (l *Lexer) Lex() (Position, Token, string) {
 			return l.pos, RBRACKET, "]"
 		default:
 			if unicode.IsSpace(r) {
-				continue // nothing to do here, just move on
+				continue
 			} else if unicode.IsDigit(r) {
-				// backup and let lexInt rescan the beginning of the int
 				startPos := l.pos
 				l.backup()
 				lit := l.lexInt()
