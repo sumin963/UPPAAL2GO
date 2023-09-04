@@ -10,7 +10,7 @@ import (
 	"github.com/beevik/etree"
 )
 
-var read_file_path string = "train-gate.xml"
+var read_file_path string = "C:\\Users\\jsm96\\gitfolder\\UPPAAL2GO\\src\\train-gate.xml"
 
 type sort_data struct {
 	edge  *etree.Element
