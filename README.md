@@ -9,11 +9,15 @@ UPPAAL을 사용하여 정형 검증된 모델을 TADA모델로 변환
 
 
 사용법:  내부 변수 read_file_path 의 경로를 변환하고자 하는 xml 파일의 경로로 수정하여 실행.
-
-
+```
+cd src
+go run UPPAAL2TADA.go
+```
 ## TADA2GO
 TADA모델을 GO 언어로 변환
-
+```
+go run TADA2GO.go
+```
 
 사용법: 내부 변수 input_path 의 경로를 변환하고자 하는 xml 파일의 경로로 수정하여 실행.
 
