@@ -111,25 +111,26 @@ func code_generator(syntax [][]Token, syntax_lex_data [][][]string, cgo_dec [][]
 			var param_id []string
 			var clock_id []string
 			g.Id(val).Op(":=").Func().CallFunc(func(p *Group) { // 파라미터가 여러개일때 처리
-				for i, val := range param_tada[i] {
-					if i == 0 || i%2 == 0 {
-						id_type = val
-					} else {
-						if id_type == "int" {
-							p.Id(val).Int()
-							param_id = append(param_id, val)
-						} else if id_type == "string" {
-							p.Id(val).String()
-							param_id = append(param_id, val)
-						} else if id_type == "float" {
-							p.Id(val).Float64()
-							param_id = append(param_id, val)
-						} else {
-							p.Id(val).Qual("C", id_type)
-							param_id = append(param_id, val)
-						}
-					}
-				}
+				// for i, val := range param_tada[i] {
+				// 	if i == 0 || i%2 == 0 {
+				// 		id_type = val
+				// 	} else {
+				// 		if id_type == "int" {
+				// 			p.Id(val).Int()
+				// 			param_id = append(param_id, val)
+				// 		} else if id_type == "string" {
+				// 			p.Id(val).String()
+				// 			param_id = append(param_id, val)
+				// 		} else if id_type == "float" {
+				// 			p.Id(val).Float64()
+				// 			param_id = append(param_id, val)
+				// 		} else {
+				// 			p.Id(val).Qual("C", id_type)
+				// 			param_id = append(param_id, val)
+				// 		}
+				// 	}
+				// }
+				fmt.Println(param_tada, id_type)
 			}).BlockFunc(func(t *Group) {
 				//local val 초기화
 				if len(tem_val[i]) != 0 {
@@ -730,7 +731,11 @@ func make_chan(name string, isMap bool) *Statement {
 	}).Values()
 }
 func after_treatment(tem_name []string) [][]byte {
-	input_file, err := os.Open(dec_path)
+	input_file, err := os.OpenFile(
+		dec_path,
+		os.O_CREATE|os.O_RDWR|os.O_TRUNC,
+		os.FileMode(0644))
+
 	check(err)
 	reader := bufio.NewReader(input_file)
 	input_file_reader := make([][]byte, 0)
