@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"sort"
 	"strconv"
@@ -10,7 +9,7 @@ import (
 	"github.com/beevik/etree"
 )
 
-var read_file_path string = "C:\\Users\\jsm96\\gitfolder\\UPPAAL2GO\\src\\train-gate.xml"
+var read_file_path string = "C:\\Users\\jsm96\\gitfolder\\UPPAAL2GO\\src\\2doors.xml"
 
 type sort_data struct {
 	edge  *etree.Element
@@ -99,8 +98,9 @@ func ta2tada() {
 	if err := doc.ReadFromFile(read_file_path); err != nil {
 		panic(err)
 	}
+	//	dec, tem_dec, ta_loc_info, ta_tran_info := open_xml(doc)
 
-	dec, tem_dec, ta_loc_info, ta_tran_info := open_xml(doc)
+	dec, tem_dec, ta_loc_info, _ := open_xml(doc)
 	clock := make([][]string, len(ta_loc_info))
 	for i, value := range tem_dec { //declaration과 template declaraion에서 clock 추출
 		clock[i] = make([]string, 0)
@@ -111,7 +111,7 @@ func ta2tada() {
 	}
 
 	//fmt.Println(ta_loc_info)
-	fmt.Println(ta_tran_info)
+	//fmt.Println(ta_tran_info)
 	//fmt.Println(clock)
 
 	new_doc := doc
@@ -197,8 +197,7 @@ func ta2tada() {
 						time_flow_edge = time_flow_edge[:len(time_flow_edge)-1]
 						time_flow_edge = append(time_flow_edge, _edge_element)
 						time_flow_loc = time_flow_loc[:len(time_flow_loc)-1]
-						time_flow_loc_name = time_flow_loc_name[:len(time_flow_loc)-1]
-						//fmt.Println(time_flow_loc, _id)
+						time_flow_loc_name = time_flow_loc_name[:len(time_flow_loc_name)-1]
 					} else if len(Edge_prime_deduplication)-1 == num && _isinvariant {
 						_inv := ta_loc_info[tem_num][loc_num][1]
 						_inv = mapGuard_greaterthan(_inv)
@@ -216,6 +215,7 @@ func ta2tada() {
 					_tran_guard.CreateAttr("x", "0")
 					_tran_guard.CreateAttr("y", "0")
 					loc_name_num := strconv.Itoa(loc_num + 1)
+					//fmt.Println(time_flow_loc, loc_num, _tran_guard)
 					_tran_guard.CreateText(time_flow_loc_name[loc_num] + "_" + loc_name_num)
 				}
 				for _, val := range time_flow_edge {
@@ -321,7 +321,7 @@ func ta2tada() {
 								_loc_name := loc_name.Text()
 								l.RemoveChild(loc_name)
 								_tran_guard := l.CreateElement("name")
-								fmt.Println(_loc_name)
+								//fmt.Println(_loc_name)
 								_tran_guard.CreateAttr("x", "0")
 								_tran_guard.CreateAttr("y", "0")
 								_tran_guard.CreateText(_loc_name + "_0")

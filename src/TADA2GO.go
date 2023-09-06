@@ -14,7 +14,7 @@ import (
 )
 
 // 입력할 xml파일 경로
-var input_xml = "C:\\Users\\jsm96\\gitfolder\\UPPAAL2GO\\src\\av_algo_tada.xml"
+var input_xml = "C:\\Users\\jsm96\\gitfolder\\UPPAAL2GO\\src\\2doors.xml"
 
 var path = "lexer_input.txt"
 var dec_path = "cgo_input.txt"
