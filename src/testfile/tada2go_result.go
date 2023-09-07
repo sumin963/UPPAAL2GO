@@ -56,7 +56,6 @@ func main() {
 		leave[i] = make(chan bool)
 		Go[i] = make(chan bool)
 	}
-
 	train := func(id C.id_t) {
 		//local_val := C.Train{}
 		var appr_passage []string
@@ -326,19 +325,15 @@ func main() {
 	}
 
 	go train(0)
-	go train(1)
-	go train(2)
-	go train(3)
-	go train(4)
-	go train(5)
+	// go train(1)
+	// go train(2)
+	// go train(3)
+	// go train(4)
+	// go train(5)
 	go gate()
 
 	<-time.After(time.Second * 20)
 }
-
-// no chan, no condition, 항상 트루인 트랜지션 select 조건, 조건을 만족하면 바운더리내에서 가는게아니라 바로감
-// instantaneus loc로 가는 select 조건 수정해야할수도
-// uppaal select //
 
 func when(guard bool, channel chan bool) chan bool {
 	if !guard {
@@ -370,45 +365,3 @@ func time_passage(time_passage []string, ctime time.Duration) int {
 	}
 	return len(time_passage)
 }
-
-/*
-//global dec
-#define  N  6			// const int N = 6;
-typedef int id_t;
-// local2
-typedef struct Local2{           //구조체변환
-} Local2;
-
-//local dec
-typedef struct Local{           //구조체변환
-        id_t list[N+1];
-        int len;
-} Local;
-
-void enqueue(Local *Local, id_t element)        //구조체 인자로
-{
-        Local->list[Local->len++] = element;    //구조체 값 사용시 멤버 접근하는 ->사용
-}
-
-void dequeue(Local *local)
-{
-        int i = 0;
-      local->len -= 1;
-        while (i < local->len)							//&lt; -> < 로 변환
-        {
-                local->list[i] = local->list[i + 1];
-                i++;
-        }
-        local->list[i] = 0;
-}
-
-id_t front(Local *local)
-{
-   return local->list[0];
-}
-
-id_t tail(Local *local)
-{
-   return local->list[local->len - 1];
-}
-*/

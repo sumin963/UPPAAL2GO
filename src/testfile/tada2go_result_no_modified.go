@@ -2,9 +2,15 @@ package main
 
 import (
 	"fmt"
+	"image/color"
 	"strconv"
 	"strings"
 	"time"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
 )
 
 // #define N  6
@@ -65,6 +71,75 @@ func main() {
 		var id2_passage []string
 		var id3_passage []string
 		var id4_passage []string
+		//
+		//
+		app := app.New()
+		window := app.NewWindow("Diagonal")
+		var loc_id0 *canvas.Circle
+		var loc_id1 *canvas.Circle
+		var loc_id2 *canvas.Circle
+		var loc_id3 *canvas.Circle
+		var loc_id4 *canvas.Circle
+		var loc_id2p *canvas.Circle
+		var loc_id3p *canvas.Circle
+		var loc_id4p *canvas.Circle
+		var loc_id2pp *canvas.Circle
+		var loc_id3pp *canvas.Circle
+		var loc_id4pp *canvas.Circle
+		var loc_exp *canvas.Circle
+		loc_id0 = &canvas.Circle{StrokeColor: color.RGBA{39, 112, 180, 255}, StrokeWidth: 15}
+		loc_id1 = &canvas.Circle{StrokeColor: color.RGBA{39, 112, 180, 255}, StrokeWidth: 15}
+		loc_id2 = &canvas.Circle{StrokeColor: color.RGBA{39, 112, 180, 255}, StrokeWidth: 15}
+		loc_id3 = &canvas.Circle{StrokeColor: color.RGBA{39, 112, 180, 255}, StrokeWidth: 15}
+		loc_id4 = &canvas.Circle{StrokeColor: color.RGBA{39, 112, 180, 255}, StrokeWidth: 15}
+		loc_id2p = &canvas.Circle{StrokeColor: color.RGBA{39, 112, 180, 255}, StrokeWidth: 15}
+		loc_id3p = &canvas.Circle{StrokeColor: color.RGBA{39, 112, 180, 255}, StrokeWidth: 15}
+		loc_id4p = &canvas.Circle{StrokeColor: color.RGBA{39, 112, 180, 255}, StrokeWidth: 15}
+		loc_id2pp = &canvas.Circle{StrokeColor: color.RGBA{39, 112, 180, 255}, StrokeWidth: 15}
+		loc_id3pp = &canvas.Circle{StrokeColor: color.RGBA{39, 112, 180, 255}, StrokeWidth: 15}
+		loc_id4pp = &canvas.Circle{StrokeColor: color.RGBA{39, 112, 180, 255}, StrokeWidth: 15}
+		loc_exp = &canvas.Circle{StrokeColor: color.RGBA{39, 112, 180, 255}, StrokeWidth: 15}
+		loc_id0.Resize(fyne.NewSize(15, 15))
+		loc_id0.Move(fyne.NewPos(100, 100))
+		loc_id1.Resize(fyne.NewSize(15, 15))
+		loc_id1.Move(fyne.NewPos(150, 300))
+		loc_id2.Resize(fyne.NewSize(15, 15))
+		loc_id2.Move(fyne.NewPos(300, 100))
+		loc_id3.Resize(fyne.NewSize(15, 15))
+		loc_id3.Move(fyne.NewPos(100, 200))
+		loc_id4.Resize(fyne.NewSize(15, 15))
+		loc_id4.Move(fyne.NewPos(300, 200))
+		loc_id2p.Resize(fyne.NewSize(15, 15))
+		loc_id2p.Move(fyne.NewPos(350, 100))
+		loc_id3p.Resize(fyne.NewSize(15, 15))
+		loc_id3p.Move(fyne.NewPos(150, 200))
+		loc_id4p.Resize(fyne.NewSize(15, 15))
+		loc_id4p.Move(fyne.NewPos(350, 200))
+		loc_id2pp.Resize(fyne.NewSize(15, 15))
+		loc_id2pp.Move(fyne.NewPos(400, 100))
+		loc_id3pp.Resize(fyne.NewSize(15, 15))
+		loc_id3pp.Move(fyne.NewPos(200, 200))
+		loc_id4pp.Resize(fyne.NewSize(15, 15))
+		loc_id4pp.Move(fyne.NewPos(400, 200))
+		loc_exp.Resize(fyne.NewSize(15, 15))
+		loc_exp.Move(fyne.NewPos(0, 0))
+		tick := time.NewTicker(time.Second * 5)
+
+		//var current_loc *canvas.Circle
+		current_loc := &loc_id0
+		past_loc := &loc_id0
+
+		ch := make(chan string)
+
+		go func() {
+			for {
+				window.SetContent(container.NewWithoutLayout(loc_id0, loc_id1, loc_id2, loc_id2p, loc_id2pp, loc_id3, loc_id3p, loc_id3pp, loc_id4, loc_id4p, loc_id4pp, loc_exp))
+
+				<-tick.C
+			}
+		}()
+		//
+		//
 		goto id0
 	id0:
 		x = time.Since(x_now)
@@ -210,10 +285,10 @@ func main() {
 		}
 	id6:
 		select {
-		case <-time.After(time.Second * 40):
-			C.enqueue(&local_val, e)
+		case <-appr_chan[0]:
+			C.enqueue(&local_val, 0)
 			goto id5
-		case <-time.After(time.Second * 40):
+		case <-leave_chan[C.front(&local_val)]:
 			C.dequeue(&local_val)
 			goto id7
 		}
@@ -221,12 +296,12 @@ func main() {
 		select {
 		case when(local_val.len > 0, go_chan[C.front(&local_val)]) <- true:
 			goto id6
-		case <-time.After(time.Second * 40):
-			C.enqueue(&local_val, e)
+		case <-when(local_val.len == 0, appr_chan[0]):
+			C.enqueue(&local_val, 0)
 			goto id6
 		}
 	}
-	go Train()
+	go Train(0)
 	go Gate()
 	<-time.After(time.Second * 20)
 }
