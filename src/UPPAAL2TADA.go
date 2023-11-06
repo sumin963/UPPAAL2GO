@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"sort"
 	"strconv"
@@ -457,22 +458,27 @@ func ispossible(val transition_e_prime, edge *etree.Element, clock [][]string, t
 
 	if strings.Contains(guard, "<=") {
 		if guardVal >= valGuardVal {
+			fmt.Println("<=")
 			result = true
 		}
 	} else if strings.Contains(guard, "<") {
 		if guardVal > valGuardVal || ((guardVal == valGuardVal) && (valGuardForm == "x<n")) {
+			fmt.Println("<")
 			result = true
 		}
 	} else if strings.Contains(guard, "==") { //
 		if (guardVal == valGuardVal) && (valGuardForm == "x>n") {
+			fmt.Println("==")
 			result = true
 		}
 	} else if strings.Contains(guard, ">=") {
 		if (guardVal < valGuardVal) || ((guardVal == valGuardVal) && (valGuardForm == "x>n")) {
+			fmt.Println(">=")
 			result = true
 		}
 	} else if strings.Contains(guard, ">") { //
 		if (guardVal < valGuardVal) || ((guardVal == valGuardVal) && (valGuardForm == "x>n")) {
+			fmt.Println(">")
 			result = true
 		}
 	}
