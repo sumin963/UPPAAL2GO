@@ -14,7 +14,7 @@ import (
 )
 
 // 입력할 xml파일 경로
-var input_xml = "C:\\Users\\jsm96\\gitfolder\\UPPAAL2GO\\src\\2doors.xml"
+var input_xml = "C:\\Users\\jsm96\\gitfolder\\UPPAAL2GO\\src\\av_algo_tada.xml"
 
 var path = "lexer_input.txt"
 var dec_path = "cgo_input.txt"
@@ -60,11 +60,11 @@ func main() {
 
 	//lexer를 통해 얻은 결과를 입력으로 parer
 	syntax, syntax_lex_data := parse_TADA(rst_lexer, rst_token)
-	//fmt.Println(syntax, syntax_lex_data)
+	//	fmt.Println(syntax, syntax_lex_data)
 
 	//처음 xml에서 받아온 tem_name을 이용하여  이전 함수를 통해 얻은 paser 결과를 후처리
 	cgo_dec := after_treatment(tem_name)
-	fmt.Println(cgo_dec)
+	//fmt.Println("cgo_dec", cgo_dec)
 
 	//xml에서 얻은 data를 통해 transition을 source location을 공유하는 trasition별로 분류하고 guard의 시간의 흐름에따라 정렬
 	srt_trans := sort_tada_trans(xml_loc, xml_transition)
@@ -731,11 +731,7 @@ func make_chan(name string, isMap bool) *Statement {
 	}).Values()
 }
 func after_treatment(tem_name []string) [][]byte {
-	input_file, err := os.OpenFile(
-		dec_path,
-		os.O_CREATE|os.O_RDWR|os.O_TRUNC,
-		os.FileMode(0644))
-
+	input_file, err := os.Open(dec_path)
 	check(err)
 	reader := bufio.NewReader(input_file)
 	input_file_reader := make([][]byte, 0)

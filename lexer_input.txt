@@ -1,22 +1,51 @@
 
 
+const int N = 6;         
+typedef int[0,N-1] id_t;
 
-//Door;
+chan        appr[N], stop[N], leave[N];
+urgent chan go[N];
+
+//Train;
 clock x;
-//User;
-clock w;
-//param_Door;
-bool &activated, urgent chan &pushed, urgent chan &closed1, urgent chan &closed2;
-//param_User;
-bool &activated, urgent chan &pushed;
+//Gate;
+id_t list[N+1];
+int[0,N] len;
+
+
+void enqueue(id_t element)
+{
+        list[len++] = element;
+}
+
+
+void dequeue()
+{
+        int i = 0;
+        len -= 1;
+        while (i < len)
+        {
+                list[i] = list[i + 1];
+                i++;
+        }
+        list[i] = 0;
+}
+
+
+id_t front()
+{
+   return list[0];
+}
+
+
+id_t tail()
+{
+   return list[len - 1];
+}
+//param_Train;
+const id_t id;
+//param_Gate;
+;
 //system_dec;
-bool activated1, activated2;
-urgent chan pushed1, pushed2;
-urgent chan closed1, closed2;
+system Train, Gate;
 
-Door1 = Door(activated1, pushed1, closed1, closed2);
-Door2 = Door(activated2, pushed2, closed2, closed1);
-User1 = User(activated1, pushed1);
-User2 = User(activated2, pushed2);
-
-system Door1, Door2, User1, User2;
