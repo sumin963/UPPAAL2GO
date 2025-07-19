@@ -1,29 +1,31 @@
 # UPPAAL2GO
-UPPAAL2GO는 UPPAAL2TADA, TADA2GO 두 가지가 있다.
+UPPAAL2GO consists of two components: UPPAAL2TADA and TADA2GO.
+
 
 ## UPPAAL2TADA
-UPPAAL을 사용하여 정형 검증된 모델을 TADA모델로 변환
+Converts a formally verified UPPAAL model into a TADA model, which serves as an intermediate representation to facilitate translation into Go code.
 
 
-(TADA모델은 UPPAAL에서 GO언어로 변환을 용이하게 만들기위한 모델)
+Usage:
+Modify the internal variable read_file_path to point to the .xml file you wish to convert, then execute the program.
 
-
-사용법:  내부 변수 read_file_path 의 경로를 변환하고자 하는 xml 파일의 경로로 수정하여 실행.
 ```
 cd src
 go run UPPAAL2TADA.go
 ```
+
 ## TADA2GO
-TADA모델을 GO 언어로 변환
+Conversion of TADA Models to Go Language
+
 ```
 go run TADA2GO.go
 ```
 
-사용법: 내부 변수 input_path 의 경로를 변환하고자 하는 xml 파일의 경로로 수정하여 실행.
+Usage:
+Modify the internal variable input_path to specify the path of the XML file to be converted, then run the program.
 
 
-
-## 필요 라이브러리
+Required Libraries
 * https://github.com/beevik/etree
 * https://github.com/dave/jennifer
 
